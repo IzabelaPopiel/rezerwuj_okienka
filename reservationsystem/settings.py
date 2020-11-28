@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-import config
+from reservationsystem import config
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'rest_framework',
     # Appointments application
     'appointments.apps.AppointmentsConfig',
+    # authentication app
+    'authentication.apps.AuthenticationConfig',
     # CORSq
     'corsheaders',
 ]
@@ -62,7 +64,9 @@ ROOT_URLCONF = 'reservationsystem.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -91,6 +95,14 @@ DATABASES = {
             'authMechanism': config.authMechanism
         }
     }
+}
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
 }
 
 # Password validation
