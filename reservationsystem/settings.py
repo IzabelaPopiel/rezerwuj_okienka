@@ -40,8 +40,6 @@ INSTALLED_APPS = [
     'rest_framework',
     # Appointments application
     'appointments.apps.AppointmentsConfig',
-    # authentication app
-    'authentication.apps.AuthenticationConfig',
     # CORSq
     'corsheaders',
 ]
