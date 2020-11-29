@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form>
+    <h3 class="text-center">Logowanie</h3>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+            <label for="email_login">Adres email</label>
+            <input type="email" class="form-control" id="email_login" placeholder="Wpisz adres email...">
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+            <label for="password_login">Hasło</label>
+            <input type="password" class="form-control" id="password_login" placeholder="Wpisz hasło...">
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+            <select id="user_type" class="form-control" name="user_type">
+                <option selected>Wybierz typ użytkownika...</option>
+                <option>lekarz</option>
+                <option>pacjent</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+            <a href="/appointments/register" class="btn btn-link align-center">Nie mam konta. Przejdź do
+                rejestracji.</a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+            <button type="submit" class="btn btn-dark align-center">Zatwierdź</button>
+        </div>
+    </div>
+
+
+</form>
+
+
+{% endblock %}
+

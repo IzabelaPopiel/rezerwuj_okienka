@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form>
+    <h3 class="text-center">Rejestracja</h3>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <label for="email_login">Adres email</label>
+            <input type="email" class="form-control" id="email_login" placeholder="Wpisz adres email..."
+                   aria-describedby="emailHelp">
+            <small id="emailHelp" class="form-text text-muted">Nie udostępnimy nikomu z zewnętrz twojego adresu
+                email. Twoje dane są bezpieczne.</small>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <label for="first_name">Imię</label>
+            <input type="text" class="form-control" id="first_name" placeholder="Wpisz imię...">
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <label for="last_name">Nazwisko</label>
+            <input type="text" class="form-control" id="last_name" placeholder="Wpisz nazwisko...">
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <label for="pesel">PESEL</label>
+            <input type="number" class="form-control" id="pesel" placeholder="Wpisz numer PESEL..."
+                   aria-describedby="peselHelp">
+            <small id="peselHelp" class="form-text text-muted">Nie udostępnimy nikomu z zewnętrz twojego numeru
+                PESEL. Twoje dane są bezpieczne.</small>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <label for="password_login">Hasło</label>
+            <input type="password" class="form-control" id="password_login" placeholder="Wpisz hasło...">
+            <small id="passwordHelp" class="form-text text-muted">
+                Musi zawierać co najmniej 6 znaków w tym znaki specjalne.
+            </small>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <label for="password_login_repead">Potwierdzenie hasła</label>
+            <input type="password" class="form-control" id="password_login_repead"
+                   placeholder="Wpisz ponownie hasło...">
+        </div>
+    </div>
+
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <div>
+                <a href="/appointments/login" class="btn btn-link ">Mam już konto. Przejdź do
+                    logowania.</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            <button type="submit" class="btn btn-dark">Zatwierdź</button>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}
