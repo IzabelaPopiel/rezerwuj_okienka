@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import forms
 
 
 class MedicalSpecialty(models.Model):
@@ -12,9 +13,11 @@ class Doctor(models.Model):
 
 
 class Patient(models.Model):
-    pesel = models.IntegerField(max_length=11)
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
+    email = models.EmailField(required=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    pesel = models.IntegerField(max_value=99999999999)
+    password_login = models.CharField(widget=forms.PasswordInput, min_length=8)
 
 
 class Address(models.Model):
