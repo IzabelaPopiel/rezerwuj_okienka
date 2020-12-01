@@ -13,11 +13,11 @@ class Doctor(models.Model):
 
 
 class Patient(models.Model):
-    email = models.EmailField(required=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     pesel = models.IntegerField(max_value=99999999999)
-    password_login = models.CharField(widget=forms.PasswordInput, min_length=8)
+    email = models.EmailField(required=True)
+    password = models.CharField(widget=forms.PasswordInput, min_length=8)
 
 
 class Address(models.Model):
