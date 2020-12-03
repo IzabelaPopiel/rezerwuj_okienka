@@ -1,28 +1,66 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect
 
 from appointments.models import Patient
 
+form_class_style = "form-control"
+form_class_style_radio = "form-check-input position-static"
+OPTIONS = (
+    ("S 1", "S 1"),
+    ("S 2", "S 2"),
+    ("S 3", "S 3"),
+)
+USER_TYPES = (
+    ("L", "Lekarz"),
+    ("P", "Pacjent")
+)
+
 
 class MedicalSpecialtyForm(forms.Form):
-    OPTIONS = (
-        ("S 1", "S 1"),
-        ("S 2", "S 2"),
-        ("S 3", "S 3"),
-    )
     specialty = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(
         attrs={'class': 'custom-control-checkbox'}), choices=OPTIONS)
 
 
+class LoginForm(forms.Form):
+    email = forms.CharField(label="Adres email", max_length=255,
+                            widget=forms.PasswordInput(attrs={'class': form_class_style,
+                                                              'placeholder': "wpisz adres email..."}))
+    password = forms.CharField(label="Hasło", max_length=255, min_length=8,
+                               widget=forms.PasswordInput(attrs={'class': form_class_style,
+                                                                 'placeholder': "wpisz hasło..."}))
+    user_type = ChoiceField(label="Typ użytkownika",
+                            widget=RadioSelect(attrs={'class': form_class_style_radio}), choices=USER_TYPES)
+
+
 class PatientForm(forms.ModelForm):
-    password = forms.CharField(max_length=255, min_length=8)
-    password_repeat = forms.CharField(label="Repeat password", widget=forms.PasswordInput, max_length=255, min_length=8)
+    password = forms.CharField(label="Hasło", max_length=255, min_length=8,
+                               help_text="Musi zawierać co najmniej 8 znaków w tym znaki specjalne.",
+                               widget=forms.PasswordInput(attrs={'class': form_class_style,
+                                                                 'placeholder': "wpisz hasło..."}))
+    password_repeat = forms.CharField(label="Potwierdzenie hasła",
+                                      widget=forms.PasswordInput(attrs={'class': form_class_style,
+                                                                        'placeholder': 'wpisz ponownie hasło...'}),
+                                      max_length=255, min_length=8)
 
     class Meta:
         model = Patient
         fields = '__all__'
         widgets = {
-            'password': forms.PasswordInput(),
+            'email': EmailInput(attrs={'class': form_class_style, 'placeholder': "wpisz adres email..."}),
+            'first_name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz imię..."}),
+            'last_name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz nazwisko..."}),
+            'pesel': NumberInput(attrs={'class': form_class_style, 'placeholder': "wpisz PESEL..."})
+        }
+        labels = {
+            'email': "Adres email",
+            'first_name': "Imię",
+            'last_name': "Nazwisko",
+            'pesel': "PESEL"
+        }
+        help_texts = {
+            'email': "Nie udostępnimy nikomu z zewnętrz twojego adresu email. Twoje dane są bezpieczne.",
+            'pesel': "Nie udostępnimy nikomu z zewnętrz twojego numeru PESEL. Twoje dane są bezpieczne."
         }
 
     def clean_email(self):

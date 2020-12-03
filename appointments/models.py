@@ -11,6 +11,8 @@ class Doctor(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     medical_Specialty = models.ManyToManyField(MedicalSpecialty)
+    email = models.EmailField(max_length=255)
+    password = models.CharField(max_length=255)
 
 
 class Patient(models.Model):
