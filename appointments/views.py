@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 
 
 # Create your views here.
-from appointments.forms import PatientForm
+from appointments.forms import PatientForm, LoginForm
 
 
 def register(request):
@@ -13,8 +13,18 @@ def register(request):
             return redirect('/appointments/login/')
         else:
             print(form.errors)
-    return render(request, 'register.html')
+    else:
+        form = PatientForm()
+    return render(request, 'register.html', {'form': form})
 
 
 def login(request):
-    return render(request, 'login.html')
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            pass
+        else:
+            print(form.errors)
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})
