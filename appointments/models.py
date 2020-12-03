@@ -1,4 +1,4 @@
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
 from django import forms
 
@@ -16,7 +16,7 @@ class Doctor(models.Model):
 class Patient(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    pesel = models.PositiveIntegerField(primary_key=True, validators=[MaxValueValidator(99999999999)])
+    pesel = models.CharField(max_length=11, validators=[RegexValidator(r'^\d{11,11}$')])
     email = models.EmailField(max_length=255)
     password = models.CharField(max_length=255)
 
