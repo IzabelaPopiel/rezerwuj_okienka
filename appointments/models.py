@@ -1,5 +1,6 @@
+from django.core.validators import MaxValueValidator
 from django.db import models
-from django.forms import forms
+from django import forms
 
 
 class MedicalSpecialty(models.Model):
@@ -15,9 +16,9 @@ class Doctor(models.Model):
 class Patient(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    pesel = models.IntegerField(max_value=99999999999)
-    email = models.EmailField(required=True)
-    password = models.CharField(widget=forms.PasswordInput, min_length=8)
+    pesel = models.PositiveIntegerField(primary_key=True, validators=[MaxValueValidator(99999999999)])
+    email = models.EmailField(max_length=255)
+    password = models.CharField(max_length=255)
 
 
 class Address(models.Model):
@@ -32,5 +33,3 @@ class Visit(models.Model):
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
     location = models.ForeignKey(Address, on_delete=models.CASCADE)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-
-
