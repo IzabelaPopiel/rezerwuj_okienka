@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect
 
-
 # Create your views here.
 from appointments.forms import PatientForm, LoginForm
 
@@ -10,7 +9,7 @@ def register(request):
         form = PatientForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('/appointments/login/')
+            return redirect('/appointments/patient_home/')
         else:
             print(form.errors)
     else:
@@ -22,9 +21,20 @@ def login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            pass
+            if form.data['user_type'] == 'patient':
+                return redirect('/appointments/patient_home/')
+            else:
+                return redirect('/appointments/doctor_home/')
         else:
             print(form.errors)
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
+
+
+def patient_home(request):
+    return render(request, 'patient_home.html')
+
+
+def doctor_home(request):
+    return render(request, 'doctor_home.html')
