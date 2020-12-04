@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect
 
-from appointments.models import Patient
+from appointments.models import Patient, Doctor
 
 form_class_style = "form-control"
 form_class_style_radio = "form-check-input position-static"
@@ -12,8 +12,8 @@ OPTIONS = (
     ("S 3", "S 3"),
 )
 USER_TYPES = (
-    ("L", "Lekarz"),
-    ("P", "Pacjent")
+    ("doctor", "Lekarz"),
+    ("patient", "Pacjent")
 )
 
 
@@ -22,15 +22,41 @@ class MedicalSpecialtyForm(forms.Form):
         attrs={'class': 'custom-control-checkbox'}), choices=OPTIONS)
 
 
-class LoginForm(forms.Form):
-    email = forms.CharField(label="Adres email", max_length=255,
-                            widget=forms.PasswordInput(attrs={'class': form_class_style,
-                                                              'placeholder': "wpisz adres email..."}))
-    password = forms.CharField(label="Hasło", max_length=255, min_length=8,
-                               widget=forms.PasswordInput(attrs={'class': form_class_style,
-                                                                 'placeholder': "wpisz hasło..."}))
-    user_type = ChoiceField(label="Typ użytkownika",
-                            widget=RadioSelect(attrs={'class': form_class_style_radio}), choices=USER_TYPES)
+class LoginForm(forms.ModelForm):
+    user_type = forms.ChoiceField(label="Typ użytkownika",
+                                  widget=forms.RadioSelect(attrs={'class': form_class_style_radio}), choices=USER_TYPES)
+
+    class Meta:
+        model = Patient
+        fields = ['email', 'password']
+        widgets = {
+            'email': EmailInput(attrs={'class': form_class_style, 'placeholder': "wpisz adres email..."}),
+            'password': forms.PasswordInput(attrs={'class': form_class_style, 'placeholder': "wpisz hasło..."})
+        }
+        labels = {
+            'email': "Adres email",
+            'password': "Hasło"
+        }
+
+    def clean(self):
+        cleaned_data = super(LoginForm, self).clean()
+
+        user_type = self.cleaned_data['user_type']
+        email = self.cleaned_data['email']
+        password = self.cleaned_data['password']
+
+        if user_type == 'patient':
+            correct_email = Patient.objects.filter(email=email)
+            correct_password = Patient.objects.filter(email=email, password=password)
+        elif user_type == 'doctor':
+            correct_email = Doctor.objects.filter(email=email)
+            correct_password = Doctor.objects.filter(email=email, password=password)
+        if not correct_email.count():
+            raise ValidationError("Password not correct")
+        if not correct_password.count():
+            raise ValidationError("Email for this user type does not exists")
+
+        return cleaned_data
 
 
 class PatientForm(forms.ModelForm):
