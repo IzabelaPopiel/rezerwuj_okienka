@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+
+<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+    <form class = "navbar-brand col-sm-3 col-md-2 mr-0">
+
+ <a href="/appointments/doctor_home" class="btn btn-secondary btn-sm" >Wizyty</a>
+
+</form>
+    <br>
+    <form class = "navbar-brand col-sm-20 col-md-0 mr-0">
+
+      <a class="navbar-brand">jankowalski@lekarz.com</a>
+
+    <a href="/appointments/login" class="btn btn-info btn-lg">
+          <span class="glyphicon glyphicon-off"></span> Wyloguj
+        </a>
+  </form>
+    <br>
+</div>
+</nav>
+<h3 class="text-center">Dodawanie wizyty</h3>
+
+<form action="/appointments/add_visit/" method="post">
+    {% csrf_token %}
+
+
+    {% for field in form %}
+
+    {% if field == form.date %}
+    <div class="row justify-content-center">
+        <div class="form-group">
+            <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+                {{ form.date }}
+
+                <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+  $(function () {
+    $("#datetimepicker1").datetimepicker({
+      format: 'YYYY-DD-MM HH:mm',locale: 'pl',
+    });
+  });
+    </script>
+
+    {% else %}
+    <div class="row justify-content-center">
+
+        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+            {{ field.label_tag }}
+
+            {{ field }}
+
+            {% for error in field.errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+            <button type="submit" class="btn btn-dark">Zatwierdź</button>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}
