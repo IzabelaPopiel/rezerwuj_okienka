@@ -159,7 +159,7 @@ class DateForm(forms.Form):
 
 
 class VisitForm(forms.ModelForm):
-    date = forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M'],
+    date = forms.DateTimeField(input_formats=['%m/%d/%Y %I:%M %p'],
                                widget=forms.DateTimeInput(attrs={
                                    'class': 'form-control datetimepicker-input',
                                    'data-target': '#datetimepicker1'
