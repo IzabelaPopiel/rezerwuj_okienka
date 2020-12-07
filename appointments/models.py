@@ -27,7 +27,7 @@ class Address(models.Model):
     name = models.CharField(max_length=255)
     street = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
-    postcode = models.CharField(max_length=10)
+    postcode = models.CharField(max_length=6, validators=[RegexValidator(r'^\d\d-\d\d\d$')])
 
 
 class Visit(models.Model):

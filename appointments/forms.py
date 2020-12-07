@@ -1,8 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect
+from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
 
-from appointments.models import Patient, Doctor
+from appointments.models import Patient, Doctor, Visit, Address
 
 form_class_style = "form-control"
 form_class_style_radio = "form-check-input position-static"
@@ -15,6 +15,11 @@ USER_TYPES = (
     ("doctor", "Lekarz"),
     ("patient", "Pacjent")
 )
+DATEPICKER = {
+    'type': 'text',
+    'class': 'form-control',
+    'id': 'datetimepicker4'
+}
 
 
 class MedicalSpecialtyForm(forms.Form):
@@ -141,3 +146,66 @@ class PatientForm(forms.ModelForm):
             patient.save()
 
         return patient
+
+
+class DateForm(forms.Form):
+    date = forms.DateTimeField(
+        input_formats=['%d/%m/%Y %H:%M'],
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-control datetimepicker-input',
+            'data-target': '#datetimepicker1'
+        })
+    )
+
+
+class VisitForm(forms.ModelForm):
+    date = forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M'],
+                               widget=forms.DateTimeInput(attrs={
+                                   'class': 'form-control datetimepicker-input',
+                                   'data-target': '#datetimepicker1'
+                               }))
+
+    class Meta:
+        model = Address
+        # fields = ['name', 'street', 'city', 'postcode', 'date']
+        fields = '__all__'
+
+        widgets = {
+            'name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz  nazwę placówki..."}),
+            'street': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz ulicę..."}),
+            'city': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz miasto..."}),
+            'postcode': TextInput(
+                attrs={'class': form_class_style, 'pattern': '^\d\d-\d\d\d$', 'placeholder': "wpisz kod pocztowy..."})
+        }
+
+        labels = {
+            'name': "Nazwa placówki",
+            'street': "Ulica",
+            'city': "Miasto",
+            'postcode': "Kod pocztowy"
+        }
+
+        # def clean_name(self):
+        #     name = self.cleaned_data['name']
+        #     print(name)
+        #     # if not last_name.istitle():
+        #     #     raise ValidationError("Last name must start with capital letter")
+        #     return name
+
+    def clean_date(self):
+        date = self.cleaned_data.get('date')
+        print(date)
+        return date
+
+    def save(self, commit=True):
+        visit = super(VisitForm, self).save(commit=False)
+        visit.name = self.cleaned_data['name']
+        visit.street = self.cleaned_data['street']
+        visit.city = self.cleaned_data['city']
+        visit.postcode = self.cleaned_data['postcode']
+        visit.date = self.cleaned_data['date']
+
+        if commit:
+            visit.save()
+
+        return visit

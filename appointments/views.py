@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 
 # Create your views here.
-from appointments.forms import PatientForm, LoginForm
+from appointments.forms import PatientForm, LoginForm, VisitForm
 
 
 def register(request):
@@ -38,3 +38,18 @@ def patient_home(request):
 
 def doctor_home(request):
     return render(request, 'doctor_home.html')
+
+
+def add_visit(request):
+    if request.method == 'POST':
+        form = VisitForm(request.POST)
+        # print(form.clean_date())
+
+        if form.is_valid():
+            form.save()
+            return redirect('/appointments/doctor_home/')
+        else:
+            print(form.errors)
+    else:
+        form = VisitForm()
+    return render(request, 'add_visit.html', {'form': form})
