@@ -46,15 +46,11 @@ class LoginForm(forms.ModelForm):
         password = self.cleaned_data['password']
 
         if user_type == 'patient':
-            correct_email = Patient.objects.filter(email=email)
-            correct_password = Patient.objects.filter(email=email, password=password)
+            correct_email_password = Patient.objects.filter(email=email, password=password)
         elif user_type == 'doctor':
-            correct_email = Doctor.objects.filter(email=email)
-            correct_password = Doctor.objects.filter(email=email, password=password)
-        if not correct_email.count():
-            raise ValidationError("Password not correct")
-        if not correct_password.count():
-            raise ValidationError("Email for this user type does not exists")
+            correct_email_password = Doctor.objects.filter(email=email, password=password)
+        if not correct_email_password.count():
+            raise ValidationError("Email or password not correct")
 
         return cleaned_data
 
