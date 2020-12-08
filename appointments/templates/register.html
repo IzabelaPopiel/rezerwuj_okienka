@@ -22,7 +22,7 @@
             {% endif %}
 
             {% for error in field.errors %}
-            {{ error }}
+            <small class="text-danger">{{ error }}</small>
             {% endfor %}
         </div>
     </div>
