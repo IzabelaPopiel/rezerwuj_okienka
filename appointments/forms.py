@@ -50,7 +50,7 @@ class LoginForm(forms.ModelForm):
         elif user_type == 'doctor':
             correct_email_password = Doctor.objects.filter(email=email, password=password)
         if not correct_email_password.count():
-            raise ValidationError("Email or password not correct")
+            raise ValidationError("Adres email, hasło lub typ użytkownika nieprawidłowe")
 
         return cleaned_data
 
@@ -90,21 +90,21 @@ class PatientForm(forms.ModelForm):
         print(email)
         r = Patient.objects.filter(email=email)
         if r.count():
-            raise ValidationError("Email already exists")
+            raise ValidationError("Adres email jest już zajęty")
         return email
 
     def clean_first_name(self):
         first_name = self.cleaned_data['first_name']
         print(first_name)
         if not first_name.istitle():
-            raise ValidationError("First name must start with capital letter")
+            raise ValidationError("Imię musi rozpoczynać się wielką literą")
         return first_name
 
     def clean_last_name(self):
         last_name = self.cleaned_data['last_name']
         print(last_name)
         if not last_name.istitle():
-            raise ValidationError("Last name must start with capital letter")
+            raise ValidationError("Nazwisko musi rozpoczynać się wielką literą")
         return last_name
 
     def clean_pesel(self):
@@ -112,7 +112,7 @@ class PatientForm(forms.ModelForm):
         print(pesel)
         r = Patient.objects.filter(pesel=pesel)
         if r.count():
-            raise ValidationError("PESEL already exists")
+            raise ValidationError("PESEL jest już zajęty")
         return pesel
 
     def clean_password_repeat(self):
@@ -121,7 +121,7 @@ class PatientForm(forms.ModelForm):
         print(password)
         print(password_repeat)
         if password != password_repeat:
-            raise ValidationError("Passwords don't match")
+            raise ValidationError("Hasła nie są identyczne")
         return password_repeat
 
     def save(self, commit=True):
