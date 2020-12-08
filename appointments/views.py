@@ -21,6 +21,8 @@ def login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
+            request.session['email'] = form.data['email']
+            request.session['user_type'] = form.data['user_type']
             if form.data['user_type'] == 'patient':
                 return redirect('/appointments/patient_home/')
             else:
@@ -29,6 +31,14 @@ def login(request):
             print(form.errors)
     else:
         form = LoginForm()
+    return render(request, 'login.html', {'form': form})
+
+
+def logout(request):
+    print('logout')
+    if request.method == 'GET':
+        request.session.flush()
+    form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
 
