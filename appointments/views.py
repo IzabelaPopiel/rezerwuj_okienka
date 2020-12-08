@@ -5,7 +5,9 @@ from appointments.forms import PatientForm, LoginForm
 
 
 def register(request):
-    if request.method == 'POST':
+    if is_already_logged(request):
+        return render(request, redirect_template(request))
+    elif request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
             form.save()
@@ -18,7 +20,9 @@ def register(request):
 
 
 def login(request):
-    if request.method == 'POST':
+    if is_already_logged(request):
+        return render(request, redirect_template(request))
+    elif request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
             request.session['email'] = form.data['email']
@@ -30,6 +34,7 @@ def login(request):
         else:
             print(form.errors)
     else:
+        print('anyway')
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
@@ -48,3 +53,16 @@ def patient_home(request):
 
 def doctor_home(request):
     return render(request, 'doctor_home.html')
+
+
+def is_already_logged(request):
+    if request.session.get('email') and request.session.get('user_type'):
+        return True
+    return False
+
+
+def redirect_template(request):
+        if request.session.get('user_type') == 'patient':
+            return 'patient_home.html'
+        elif request.session.get('user_type') == 'doctor':
+            return 'doctor_home.html'
