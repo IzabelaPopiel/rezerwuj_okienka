@@ -11,7 +11,7 @@ def register(request):
         form = PatientForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('/appointments/patient_home/')
+            return redirect('/appointments/home/')
         else:
             print(form.errors)
     else:
@@ -27,10 +27,7 @@ def login(request):
         if form.is_valid():
             request.session['email'] = form.data['email']
             request.session['user_type'] = form.data['user_type']
-            if form.data['user_type'] == 'patient':
-                return redirect('/appointments/patient_home/')
-            else:
-                return redirect('/appointments/doctor_home/')
+            return redirect('/appointments/home/')
         else:
             print(form.errors)
     else:
@@ -47,12 +44,12 @@ def logout(request):
     return render(request, 'login.html', {'form': form})
 
 
-def patient_home(request):
-    return render(request, 'patient_home.html')
-
-
-def doctor_home(request):
-    return render(request, 'doctor_home.html')
+def home(request):
+    if is_already_logged(request):
+        return render(request, redirect_template(request))
+    else:
+        form = LoginForm()
+        return render(request, 'login.html', {'form': form})
 
 
 def is_already_logged(request):
@@ -62,7 +59,7 @@ def is_already_logged(request):
 
 
 def redirect_template(request):
-        if request.session.get('user_type') == 'patient':
-            return 'patient_home.html'
-        elif request.session.get('user_type') == 'doctor':
-            return 'doctor_home.html'
+    if request.session.get('user_type') == 'patient':
+        return 'patient_home.html'
+    elif request.session.get('user_type') == 'doctor':
+        return 'doctor_home.html'
