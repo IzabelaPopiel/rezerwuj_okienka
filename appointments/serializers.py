@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from appointments.models import Patient, Visit
+from appointments.models import Patient, Visit, Doctor
 
 
 class PatientSerializer(serializers.ModelSerializer):
@@ -12,11 +12,24 @@ class PatientSerializer(serializers.ModelSerializer):
                   'email',
                   'password')
 
+
+class DoctorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = ('id',
+                  'first_name',
+                  'last_name',
+                  'email',
+                  'password',
+                  'medical_Specialty')
+
+
 class VisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visit
 
-        fields = ('name',
+        fields = ('id',
+                  'name',
                   'street',
                   'city',
                   'postcode',

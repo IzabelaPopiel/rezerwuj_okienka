@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
 
-from appointments.models import Patient, Doctor, Visit, Address
+from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty
 
 form_class_style = "form-control"
 form_class_style_radio = "form-check-input position-static"
@@ -209,3 +209,77 @@ class VisitForm(forms.ModelForm):
             visit.save()
 
         return visit
+
+
+class DoctorForm(forms.ModelForm):
+    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
+    choices = [("", "----------")]
+    for m_specialty in medical_specialty_list:
+        choices.append((m_specialty[1], m_specialty[1]))
+
+    password = forms.CharField(label="Hasło", max_length=255, min_length=8,
+                               help_text="Musi zawierać co najmniej 8 znaków w tym znaki specjalne.",
+                               widget=forms.PasswordInput(attrs={'class': form_class_style,
+                                                                 'placeholder': "wpisz hasło..."}))
+    password_repeat = forms.CharField(label="Potwierdzenie hasła",
+                                      widget=forms.PasswordInput(attrs={'class': form_class_style,
+                                                                        'placeholder': 'wpisz ponownie hasło...'}),
+                                      max_length=255, min_length=8)
+
+    medical_Specialty = forms.ChoiceField(label="Specjalizacja", choices=list(choices),
+                                  widget=forms.Select(attrs={'class': form_class_style+" form-select"}))
+
+    class Meta:
+        model = Doctor
+        fields = ['first_name', 'last_name', 'email', 'password']
+        widgets = {
+            'first_name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz imię..."}),
+            'last_name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz nazwisko..."}),
+            'email': EmailInput(attrs={'class': form_class_style, 'placeholder': "wpisz adres email..."}),
+        }
+        labels = {
+            'first_name': 'Imię',
+            'last_name': 'Nazwisko',
+            'email': 'Adres email',
+        }
+
+    def clean_password(self):
+        password = self.cleaned_data['password']
+        password_repeat = self.cleaned_data.get('password_repeat')
+        if password != password_repeat:
+            raise ValidationError("Podane hasła muszą być takie same")
+        return password_repeat
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].lower()
+        r = Doctor.objects.filter(email=email)
+        if r.count():
+            raise ValidationError("Podany adres email jest zajęty")
+        return email
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data['first_name']
+        print(first_name)
+        if not first_name.istitle():
+            raise ValidationError("Imię musi rozpoczynać się wielką literą")
+        return first_name
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data['last_name']
+        print(last_name)
+        if not last_name.istitle():
+            raise ValidationError("Nazwisko musi rozpoczynać się wielką literą")
+        return last_name
+
+    def save(self, commit=True):
+        doctor = super(DoctorForm, self).save(commit=False)
+        doctor.first_name = self.cleaned_data['first_name']
+        doctor.last_name = self.cleaned_data['last_name']
+        doctor.email = self.cleaned_data['email']
+        doctor.medical_Specialty = self.cleaned_data['medical_Specialty']
+        doctor.password = self.cleaned_data['password']
+
+        if commit:
+            doctor.save()
+
+        return doctor
