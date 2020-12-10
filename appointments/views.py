@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from appointments.forms import PatientForm, LoginForm, VisitForm, DoctorForm
+from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
 
 
 def register(request):
@@ -39,18 +39,29 @@ def doctor_home(request):
 
 
 def add_visit(request):
-    if request.method == 'POST':
-        form = VisitForm(request.POST)
-        # print(form.clean_date())
+    # doctor id must be changed (session)
+    doctor = "anna.nowak@mail.com"
 
-        if form.is_valid():
-            form.save()
+    if request.method == 'POST':
+        address_form = AddressForm(request.POST)
+        visit_form = VisitForm(request.POST)
+
+        if address_form.is_valid() and visit_form.is_valid():
+            adress = address_form.save()
+
+            address_name = adress.all().values().values_list()[0][1]
+
+            visit_form.cleaned_data['address'] = address_name
+            visit_form.cleaned_data['doctor'] = doctor
+            visit_form.save()
+
             return redirect('/appointments/doctor_home/')
         else:
-            print(form.errors)
+            print(address_form.errors, visit_form.errors)
     else:
-        form = VisitForm()
-    return render(request, 'add_visit.html', {'form': form})
+        address_form = AddressForm()
+        visit_form = VisitForm()
+    return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form})
 
 
 def add_doctor(request):
