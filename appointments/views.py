@@ -5,11 +5,13 @@ from appointments.forms import PatientForm, LoginForm
 
 
 def register(request):
-    if request.method == 'POST':
+    if is_already_logged(request):
+        return render(request, redirect_template(request))
+    elif request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('/appointments/patient_home/')
+            return redirect('/appointments/home/')
         else:
             print(form.errors)
     else:
@@ -18,23 +20,46 @@ def register(request):
 
 
 def login(request):
-    if request.method == 'POST':
+    if is_already_logged(request):
+        return render(request, redirect_template(request))
+    elif request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            if form.data['user_type'] == 'patient':
-                return redirect('/appointments/patient_home/')
-            else:
-                return redirect('/appointments/doctor_home/')
+            request.session['email'] = form.data['email']
+            request.session['user_type'] = form.data['user_type']
+            return redirect('/appointments/home/')
         else:
             print(form.errors)
     else:
+        print('anyway')
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
 
-def patient_home(request):
-    return render(request, 'patient_home.html')
+def logout(request):
+    print('logout')
+    if request.method == 'GET':
+        request.session.flush()
+    form = LoginForm()
+    return render(request, 'login.html', {'form': form})
 
 
-def doctor_home(request):
-    return render(request, 'doctor_home.html')
+def home(request):
+    if is_already_logged(request):
+        return render(request, redirect_template(request))
+    else:
+        form = LoginForm()
+        return render(request, 'login.html', {'form': form})
+
+
+def is_already_logged(request):
+    if request.session.get('email') and request.session.get('user_type'):
+        return True
+    return False
+
+
+def redirect_template(request):
+    if request.session.get('user_type') == 'patient':
+        return 'patient_home.html'
+    elif request.session.get('user_type') == 'doctor':
+        return 'doctor_home.html'
