@@ -1,7 +1,6 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-
-# Create your views here.
-from appointments.forms import PatientForm, LoginForm
+from appointments.forms import PatientForm, LoginForm, VisitForm, DoctorForm
 
 
 def register(request):
@@ -63,3 +62,32 @@ def redirect_template(request):
         return 'patient_home.html'
     elif request.session.get('user_type') == 'doctor':
         return 'doctor_home.html'
+
+
+def add_visit(request):
+    if request.method == 'POST':
+        form = VisitForm(request.POST)
+        # print(form.clean_date())
+
+        if form.is_valid():
+            form.save()
+            return redirect('/appointments/doctor_home/')
+        else:
+            print(form.errors)
+    else:
+        form = VisitForm()
+    return render(request, 'add_visit.html', {'form': form})
+
+
+@login_required(login_url='/admin/login/')
+def add_doctor(request):
+    if request.method == 'POST':
+        form = DoctorForm(request.POST)
+        if form.is_valid():
+            form.save()
+        else:
+            print(form.errors)
+    else:
+        form = DoctorForm()
+
+    return render(request, 'add_doctor.html', {'form': form})

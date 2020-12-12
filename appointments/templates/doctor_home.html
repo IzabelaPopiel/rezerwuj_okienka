@@ -1,18 +1,105 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<h1>
-    Hello:
-    {% if request.session.email %}
-    {{ request.session.email }}
-    {% endif %}
-    {% if request.session.user_type %}
-    {{ request.session.user_type }}
-    {% endif %}
-</h1>
 
-<form action='/appointments/logout' method='GET'>
-<button type='submit'>Wyloguj</button>
+{% block content %}
+
+<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+    <form class = "navbar-brand col-sm-3 col-md-2 mr-0">
+<!--           <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">-->
+<!--    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Company name</a>-->
+
+
+ <a href="/appointments/add_visit" class="btn btn-secondary btn-sm" >Dodaj wizytę</a>
+
 </form>
+    <br>
+    <form class = "navbar-brand col-sm-20 col-md-0 mr-0">
+
+      <a class="navbar-brand">jankowalski@lekarz.com</a>
+
+    <a href="/appointments/login" class="btn btn-info btn-lg">
+          <span class="glyphicon glyphicon-off"></span> Wyloguj
+        </a>
+  </form>
+    <br>
+</div>
+</nav>
+
+<table id="dtVerticalScrollExample" class="table table-striped table-bordered table-sm" cellspacing="0"
+  width="100%">
+  <thead>
+    <tr>
+      <th class="th-sm">Imię
+      </th>
+      <th class="th-sm">Nazwisko
+      </th>
+      <th class="th-sm">Adres
+      </th>
+      <th class="th-sm">Data
+      </th>
+        <th class="th-sm">Godzina
+      </th>
+      <th class="th-sm">
+
+    </tr>
+  </thead>
+  <tbody>
+
+  <tr>
+      <td id="myTableRow">Anna</td>
+      <td>Kowalska</td>
+      <td>ul. Marii Skłodowskiej-Curie 7, Wrocław</td>
+      <td>2021/01/18</td>
+      <td>13:30</td>
+       <td>
+              <span class="table-remove"><button type="button" onclick="remove"
+                  class="btn btn-secondary btn-sm">Usuń</button></span>
+       </td>
+  </tr>
+
+
+  <tr>
+      <td>Jan</td>
+      <td>Kowalski</td>
+      <td>ul. Marii Skłodowskiej-Curie 7, Wrocław</td>
+      <td>2021/01/18</td>
+      <td>14:00</td>
+       <td>
+              <span class="table-remove"><button type="button"
+                  class="btn btn-secondary btn-sm">Usuń</button></span>
+            </td>
+  </tr>
+
+    <tr>
+      <td></td>
+      <td></td>
+      <td>ul. Marii Skłodowskiej-Curie 7, Wrocław</td>
+      <td>2021/01/18</td>
+        <td>14:30</td>
+       <td>
+              <span class="table-remove"><button type="button"
+                  class="btn btn-secondary btn-sm">Usuń</button></span>
+            </td>
+  </tr>
+
+  </tbody>
+  <tfoot>
+    <tr>
+      <th>Imię
+      </th>
+      <th>Nazwisko
+      </th>
+      <th>Adres
+      </th>
+      <th>Data
+      </th>
+         <th>Godzina
+      </th>
+      <th>
+
+    </tr>
+  </tfoot>
+</table>
+</table>
 
 {% endblock %}

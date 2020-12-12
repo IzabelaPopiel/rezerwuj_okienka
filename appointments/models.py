@@ -10,7 +10,7 @@ class MedicalSpecialty(models.Model):
 class Doctor(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    medical_Specialty = models.ManyToManyField(MedicalSpecialty)
+    medical_Specialty = models.CharField(max_length=255)
     email = models.EmailField(max_length=255)
     password = models.CharField(max_length=255)
 
@@ -27,7 +27,7 @@ class Address(models.Model):
     name = models.CharField(max_length=255)
     street = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
-    postcode = models.CharField(max_length=10)
+    postcode = models.CharField(max_length=6, validators=[RegexValidator(r'^\d\d-\d\d\d$')])
 
 
 class Visit(models.Model):
