@@ -33,8 +33,8 @@ class Address(models.Model):
 class Visit(models.Model):
     date = models.DateTimeField()
     # doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
-    doctor = models.CharField(max_length=255, blank=True, null=True) # id doctor
+    doctor = models.CharField(max_length=255, blank=True, null=True) # email doctor
     # location = models.ForeignKey(Address, on_delete=models.CASCADE)
-    address = models.CharField(max_length=255, blank=True, null=True) # id adress
+    address = models.CharField(max_length=255, blank=True, null=True) # address name
     # patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    patient = models.CharField(max_length=255, blank=True, null=True) # id patient
+    patient = models.CharField(max_length=255, blank=True, null=True) # email patient

@@ -302,9 +302,9 @@ class DoctorForm(forms.ModelForm):
             'email': 'Adres email',
         }
 
-    def clean_password(self):
+    def clean_password_repeat(self):
         password = self.cleaned_data['password']
-        password_repeat = self.cleaned_data.get('password_repeat')
+        password_repeat = self.cleaned_data['password_repeat']
         if password != password_repeat:
             raise ValidationError("Podane hasła muszą być takie same")
         return password_repeat
