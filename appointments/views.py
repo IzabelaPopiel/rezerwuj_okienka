@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, VisitForm, DoctorForm
 
@@ -53,8 +54,8 @@ def add_visit(request):
     return render(request, 'add_visit.html', {'form': form})
 
 
+@login_required(login_url='/admin/login/')
 def add_doctor(request):
-
     if request.method == 'POST':
         form = DoctorForm(request.POST)
         if form.is_valid():
@@ -65,4 +66,3 @@ def add_doctor(request):
         form = DoctorForm()
 
     return render(request, 'add_doctor.html', {'form': form})
-
