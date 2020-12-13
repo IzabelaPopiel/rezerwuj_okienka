@@ -1,7 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
-
 from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty
 
 form_class_style = "form-control"
@@ -154,18 +153,88 @@ class DateForm(forms.Form):
     )
 
 
+# class VisitForm(forms.ModelForm):
+#     date = forms.DateTimeField(label="Data i godzina", input_formats=['%m/%d/%Y %I:%M %p'],
+#                                widget=forms.DateTimeInput(attrs={
+#                                    'class': 'form-control datetimepicker-input',
+#                                    'data-target': '#datetimepicker1'
+#                                }))
+#
+#     class Meta:
+#         model = Address
+#         fields = '__all__'
+#         widgets = {
+#             'name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz  nazwę placówki..."}),
+#             'street': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz ulicę..."}),
+#             'city': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz miasto..."}),
+#             'postcode': TextInput(
+#                 attrs={'class': form_class_style, 'pattern': '^\d\d-\d\d\d$', 'placeholder': "wpisz kod pocztowy..."})
+#         }
+#         labels = {
+#             'name': "Nazwa placówki",
+#             'street': "Ulica",
+#             'city': "Miasto",
+#             'postcode': "Kod pocztowy"
+#         }
+#
+#         # def clean_name(self):
+#         #     name = self.cleaned_data['name']
+#         #     print(name)
+#         #     # if not last_name.istitle():
+#         #     #     raise ValidationError("Last name must start with capital letter")
+#         #     return name
+#
+#     def clean_date(self):
+#         date = self.cleaned_data.get('date')
+#         print(date)
+#         return date
+#
+#     def save(self, commit=True):
+#         visit = super(VisitForm, self).save(commit=False)
+#         visit.name = self.cleaned_data['name']
+#         visit.street = self.cleaned_data['street']
+#         visit.city = self.cleaned_data['city']
+#         visit.postcode = self.cleaned_data['postcode']
+#         visit.date = self.cleaned_data['date']
+#
+#         if commit:
+#             visit.save()
+#
+#         return visit
+
+
 class VisitForm(forms.ModelForm):
-    date = forms.DateTimeField(input_formats=['%m/%d/%Y %I:%M %p'],
+    date = forms.DateTimeField(label="Data i godzina", input_formats=['%m/%d/%Y %I:%M %p'],
                                widget=forms.DateTimeInput(attrs={
                                    'class': 'form-control datetimepicker-input',
                                    'data-target': '#datetimepicker1'
                                }))
 
     class Meta:
-        model = Address
-        # fields = ['name', 'street', 'city', 'postcode', 'date']
-        fields = '__all__'
+        model = Visit
+        fields = ['doctor', 'patient', 'address']
 
+    def save(self, commit=True):
+        visit = super(VisitForm, self).save(commit=False)
+        visit.address = self.cleaned_data['address']
+        visit.patient = self.cleaned_data['patient']
+        visit.doctor = self.cleaned_data['doctor']
+        visit.date = self.cleaned_data['date']
+
+        if commit:
+            x = Visit.objects.filter(doctor=visit.doctor, date=visit.date)
+            if x.count():
+                visit = x
+            else:
+                visit.save()
+
+        return visit
+
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        fields = '__all__'
         widgets = {
             'name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz  nazwę placówki..."}),
             'street': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz ulicę..."}),
@@ -173,7 +242,6 @@ class VisitForm(forms.ModelForm):
             'postcode': TextInput(
                 attrs={'class': form_class_style, 'pattern': '^\d\d-\d\d\d$', 'placeholder': "wpisz kod pocztowy..."})
         }
-
         labels = {
             'name': "Nazwa placówki",
             'street': "Ulica",
@@ -181,30 +249,21 @@ class VisitForm(forms.ModelForm):
             'postcode': "Kod pocztowy"
         }
 
-        # def clean_name(self):
-        #     name = self.cleaned_data['name']
-        #     print(name)
-        #     # if not last_name.istitle():
-        #     #     raise ValidationError("Last name must start with capital letter")
-        #     return name
-
-    def clean_date(self):
-        date = self.cleaned_data.get('date')
-        print(date)
-        return date
-
     def save(self, commit=True):
-        visit = super(VisitForm, self).save(commit=False)
-        visit.name = self.cleaned_data['name']
-        visit.street = self.cleaned_data['street']
-        visit.city = self.cleaned_data['city']
-        visit.postcode = self.cleaned_data['postcode']
-        visit.date = self.cleaned_data['date']
+        address = super(AddressForm, self).save(commit=False)
+        address.name = self.cleaned_data['name']
+        address.street = self.cleaned_data['street']
+        address.city = self.cleaned_data['city']
+        address.postcode = self.cleaned_data['postcode']
 
         if commit:
-            visit.save()
+            x = Address.objects.filter(name=address.name)
+            if x.count():
+                address = x
+            else:
+                address.save()
 
-        return visit
+        return address
 
 
 class DoctorForm(forms.ModelForm):
@@ -223,7 +282,7 @@ class DoctorForm(forms.ModelForm):
                                       max_length=255, min_length=8)
 
     medical_Specialty = forms.ChoiceField(label="Specjalizacja", choices=list(choices),
-                                  widget=forms.Select(attrs={'class': form_class_style+" form-select"}))
+                                          widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
 
     class Meta:
         model = Doctor
@@ -239,9 +298,9 @@ class DoctorForm(forms.ModelForm):
             'email': 'Adres email',
         }
 
-    def clean_password(self):
+    def clean_password_repeat(self):
         password = self.cleaned_data['password']
-        password_repeat = self.cleaned_data.get('password_repeat')
+        password_repeat = self.cleaned_data['password_repeat']
         if password != password_repeat:
             raise ValidationError("Podane hasła muszą być takie same")
         return password_repeat

@@ -1,20 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="container">
+    <br>
+    <h3 class="text-center">Logowanie</h3>
 
 {% include 'error_message.html' %}
+    <form action="/appointments/login/" method="post">
+        {% csrf_token %}
 
-<h3 class="text-center">Logowanie</h3>
+        {% for field in form %}
+        <div class="row justify-content-center">
+            <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
+                {{ field.label_tag }}
 
-<form action="/appointments/login/" method="post">
-    {% csrf_token %}
+                {{ field }}
 
-    {% for field in form %}
-    <div class="row justify-content-center">
-        <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
-            {{ field.label_tag }}
-
-            {{ field }}
+                {% if field.help_text %}
+                <small class="form-text text-muted">
+                    {{ field.help_text }}
+                </small>
+                {% endif %}
 
             {% if field.help_text %}
             <small class="form-text text-muted">
@@ -22,25 +28,29 @@
             </small>
             {% endif %}
 
+                {% for error in field.errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
         </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
 
 
-    <div class="row justify-content-center">
-        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
-            <a href="/appointments/register" class="btn btn-link">Nie mam konta. Przejdź do
-                rejestracji.</a>
+        <div class="row justify-content-center">
+            <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+                <a href="/appointments/register" class="btn btn-link button-center">Nie mam konta. Przejdź do
+                    rejestracji.</a>
+            </div>
         </div>
-    </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
-            <button type="submit" class="btn btn-dark">Zatwierdź</button>
+        <div class="row justify-content-center">
+            <div class="col-md-offset-3 col-md-6 col-md-offset-3 align-self-md-center">
+                <button type="submit" class="btn btn-dark button-center">Zatwierdź</button>
+            </div>
         </div>
-    </div>
 
-</form>
+    </form>
+</div>
 
 {% endblock %}
 
