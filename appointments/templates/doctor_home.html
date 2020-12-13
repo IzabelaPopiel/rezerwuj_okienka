@@ -5,10 +5,10 @@
 <form action='/appointments/logout' method='GET'>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container-fluid">
-            <a href="/appointments/add_visit" class="btn btn-secondary btn-sm">Dodaj wizytę</a>
+            <a href="/appointments/add_visit" class="btn btn-info btn-sm">Dodaj wizytę</a>
             <form class="d-flex">
-                <a class="navbar-brand">jankowalski@lekarz.com</a>
-                <button type='submit' class="btn btn-info btn-lg">Wyloguj</button>
+                <a class="navbar-brand">{{ request.session.email }}</a>
+                <button type='submit' class="btn btn-secondary btn-sm">Wyloguj</button>
             </form>
         </div>
     </nav>
