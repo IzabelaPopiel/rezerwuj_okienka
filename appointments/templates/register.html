@@ -5,6 +5,7 @@
     <br>
     <h3 class="text-center">Rejestracja</h3>
 
+{% include 'error_message.html' %}
     <form action="/appointments/register/" method="post">
         {% csrf_token %}
 
@@ -20,10 +21,9 @@
                 </small>
                 {% endif %}
 
-                {% for error in field.errors %}
-                {{ error }}
-                {% endfor %}
-            </div>
+            {% for error in field.errors %}
+            <small class="text-danger">{{ error }}</small>
+            {% endfor %}
         </div>
         {% endfor %}
 
