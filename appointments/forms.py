@@ -153,56 +153,6 @@ class DateForm(forms.Form):
     )
 
 
-# class VisitForm(forms.ModelForm):
-#     date = forms.DateTimeField(label="Data i godzina", input_formats=['%m/%d/%Y %I:%M %p'],
-#                                widget=forms.DateTimeInput(attrs={
-#                                    'class': 'form-control datetimepicker-input',
-#                                    'data-target': '#datetimepicker1'
-#                                }))
-#
-#     class Meta:
-#         model = Address
-#         fields = '__all__'
-#         widgets = {
-#             'name': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz  nazwę placówki..."}),
-#             'street': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz ulicę..."}),
-#             'city': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz miasto..."}),
-#             'postcode': TextInput(
-#                 attrs={'class': form_class_style, 'pattern': '^\d\d-\d\d\d$', 'placeholder': "wpisz kod pocztowy..."})
-#         }
-#         labels = {
-#             'name': "Nazwa placówki",
-#             'street': "Ulica",
-#             'city': "Miasto",
-#             'postcode': "Kod pocztowy"
-#         }
-#
-#         # def clean_name(self):
-#         #     name = self.cleaned_data['name']
-#         #     print(name)
-#         #     # if not last_name.istitle():
-#         #     #     raise ValidationError("Last name must start with capital letter")
-#         #     return name
-#
-#     def clean_date(self):
-#         date = self.cleaned_data.get('date')
-#         print(date)
-#         return date
-#
-#     def save(self, commit=True):
-#         visit = super(VisitForm, self).save(commit=False)
-#         visit.name = self.cleaned_data['name']
-#         visit.street = self.cleaned_data['street']
-#         visit.city = self.cleaned_data['city']
-#         visit.postcode = self.cleaned_data['postcode']
-#         visit.date = self.cleaned_data['date']
-#
-#         if commit:
-#             visit.save()
-#
-#         return visit
-
-
 class VisitForm(forms.ModelForm):
     date = forms.DateTimeField(label="Data i godzina", input_formats=['%m/%d/%Y %I:%M %p'],
                                widget=forms.DateTimeInput(attrs={
@@ -262,6 +212,7 @@ class AddressForm(forms.ModelForm):
                 address = x
             else:
                 address.save()
+                address = Address.objects.filter(name=address.name)
 
         return address
 

@@ -2,18 +2,17 @@
 
 
 {% block content %}
-
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a href="/appointments/add_visit" class="btn btn-secondary btn-sm">Dodaj wizytę</a>
-        <form class="d-flex">
-            <a class="navbar-brand">jankowalski@lekarz.com</a>
-            <a href="/appointments/login" class="btn btn-info btn-lg">
-                <span class="glyphicon glyphicon-off"></span> Wyloguj
-            </a>
-        </form>
-    </div>
-</nav>
+<form action='/appointments/logout' method='GET'>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a href="/appointments/add_visit" class="btn btn-secondary btn-sm">Dodaj wizytę</a>
+            <form class="d-flex">
+                <a class="navbar-brand">jankowalski@lekarz.com</a>
+                <button type='submit' class="btn btn-info btn-lg">Wyloguj</button>
+            </form>
+        </div>
+    </nav>
+</form>
 <br>
 <div class="row justify-content-center">
     <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
@@ -21,11 +20,9 @@
                width="100%">
             <thead>
             <tr>
-                <th class="th-sm">Imię
+                <th class="th-sm">Imię i Nazwisko pacjenta
                 </th>
-                <th class="th-sm">Nazwisko
-                </th>
-                <th class="th-sm">Adres
+                <th class="th-sm" colspan="3">Adres
                 </th>
                 <th class="th-sm">Data
                 </th>
@@ -36,30 +33,17 @@
             </thead>
             <tbody>
 
+            {% for visit in visits %}
             <tr>
-                <td id="myTableRow">Anna</td>
-                <td>Kowalska</td>
-                <td>ul. Marii Skłodowskiej-Curie 7, Wrocław</td>
-                <td>2021/01/18</td>
-                <td>13:30</td>
-                <td>
-              <span class="table-remove"><button type="button" onclick="remove"
-                                                 class="btn btn-secondary btn-sm">Usuń</button></span>
-                </td>
+                <td>{{visit.first_name_patient}} {{visit.last_name_patient}}</td>
+                <td>{{visit.clinic_name}}</td>
+                <td>{{visit.address_street}}</td>
+                <td>{{visit.address_city}}</td>
+                <td>{{visit.date}}</td>
+                <td>{{visit.time}}</td>
             </tr>
+            {% endfor %}
 
-
-            <tr>
-                <td>Jan</td>
-                <td>Kowalski</td>
-                <td>ul. Marii Skłodowskiej-Curie 7, Wrocław</td>
-                <td>2021/01/18</td>
-                <td>14:00</td>
-                <td>
-              <span class="table-remove"><button type="button"
-                                                 class="btn btn-secondary btn-sm">Usuń</button></span>
-                </td>
-            </tr>
 
             </tbody>
         </table>
