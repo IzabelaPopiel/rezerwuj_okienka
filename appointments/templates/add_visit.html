@@ -1,18 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a href="/appointments/doctor_home" class="btn btn-secondary btn-sm">Wizyty</a>
-        <form class="d-flex">
-            <a class="navbar-brand">jankowalski@lekarz.com</a>
-            <a href="/appointments/login" class="btn btn-info btn-lg">
-                <span class="glyphicon glyphicon-off"></span> Wyloguj
-            </a>
-        </form>
-    </div>
-</nav>
+<form action='/appointments/logout' method='GET'>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a href="/appointments/home" class="btn btn-secondary btn-sm">Wizyty</a>
+            <form class="d-flex">
+                <a class="navbar-brand">jankowalski@lekarz.com</a>
+                <button type='submit' class="btn btn-info btn-lg">Wyloguj</button>
+            </form>
+        </div>
+    </nav>
+</form>
 <div class="container">
     <br>
     <h3 class="text-center">Nowa wizyta</h3>
