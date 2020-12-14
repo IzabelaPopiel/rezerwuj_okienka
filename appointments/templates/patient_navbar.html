@@ -1,0 +1,19 @@
+<form action='/appointments/logout' method='GET'>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <ul class="nav nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Moje wizyty</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Wyszukaj wizytę</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Alerty</a>
+                </li>
+            </ul>
+                <a class="navbar-brand">{{ request.session.email }}</a>
+                <button type='submit' class="btn btn-secondary btn-sm">Wyloguj</button>
+        </div>
+    </nav>
+</form>
