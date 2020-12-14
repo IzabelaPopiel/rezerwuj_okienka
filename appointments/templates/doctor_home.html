@@ -41,6 +41,12 @@
                 <td>{{visit.address_city}}</td>
                 <td>{{visit.date}}</td>
                 <td>{{visit.time}}</td>
+                <td align="center">
+                    <form action="{% url 'appointments:remove_visit' visit.dateTime %}" method="POST">
+                        {% csrf_token %}
+                        <input type="submit"  class="btn btn-info btn-sm" value="Usuń">
+                    </form>
+                </td>
             </tr>
             {% endfor %}
 
