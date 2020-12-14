@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
 from appointments.models import Visit, Address, Patient
 

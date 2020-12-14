@@ -19,7 +19,7 @@
         <table id="dtVerticalScrollExample" class="table table-striped table-bordered table-sm" cellspacing="0"
                width="100%">
             <thead>
-            <tr>
+            <tr align="center">
                 <th class="th-sm">Imię i Nazwisko pacjenta
                 </th>
                 <th class="th-sm" colspan="3">Adres
@@ -35,16 +35,16 @@
 
             {% for visit in visits %}
             <tr>
-                <td>{{visit.first_name_patient}} {{visit.last_name_patient}}</td>
-                <td>{{visit.clinic_name}}</td>
-                <td>{{visit.address_street}}</td>
-                <td>{{visit.address_city}}</td>
-                <td>{{visit.date}}</td>
-                <td>{{visit.time}}</td>
+                <td align="center">{{visit.first_name_patient}} {{visit.last_name_patient}}</td>
+                <td align="center">{{visit.clinic_name}}</td>
+                <td align="center">{{visit.address_street}}</td>
+                <td align="center">{{visit.address_city}}</td>
+                <td align="center">{{visit.date}}</td>
+                <td align="center">{{visit.time}}</td>
                 <td align="center">
                     <form action="{% url 'appointments:remove_visit' visit.dateTime %}" method="POST">
                         {% csrf_token %}
-                        <input type="submit"  class="btn btn-info btn-sm" value="Usuń">
+                        <input type="submit" onclick="return confirm('Czy na pewno chcesz usunąć wizytę?');" class="btn btn-info btn-sm" value="Usuń">
                     </form>
                 </td>
             </tr>
