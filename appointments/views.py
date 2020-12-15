@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
@@ -101,6 +102,8 @@ def add_doctor(request):
         form = DoctorForm(request.POST)
         if form.is_valid():
             form.save()
+            messages.success(request,
+                             'Lekarz ' + form.data['first_name'] + ' ' + form.data['last_name'] + ' dodany prawidłowo')
         else:
             print(form.errors)
     else:
