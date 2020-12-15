@@ -1,18 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>
-    Hello:
-    {% if request.session.email %}
-    {{ request.session.email }}
-    {% endif %}
-    {% if request.session.user_type %}
-    {{ request.session.user_type }}
-    {% endif %}
-</h1>
 
-<form action='/appointments/logout' method='GET'>
-<button type='submit'>Wyloguj</button>
-</form>
+{% include 'patient_navbar.html' %}
 
 {% endblock %}
