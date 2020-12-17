@@ -7,6 +7,7 @@
     <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
 
         <form action="POST">
+            {% csrf_token %}
             <div class="row">
                 <div class="col-5">
                     <h4>Specjalizacja</h4>
@@ -17,12 +18,11 @@
             </div>
             <div class="row">
                 <div class="col-5">
-                    <select id="medical_specialty" class="form-control form-control">
-                        {% for speciality in specialties %}
-                        <option>{{ speciality }}</option>
-                        {% endfor %}
-                    </select>
+                    {% for field in medical_specialties_form %}
+                    {{ field }}
+                    {% endfor %}
                 </div>
+
                 <div class="col-5">
                     <input type="text" id="city" class="form-control" placeholder="Wpisz nazwę miasta...">
                 </div>
