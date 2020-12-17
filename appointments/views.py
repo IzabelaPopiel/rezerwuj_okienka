@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
-from appointments.models import Visit, Address, Patient
+from appointments.models import Visit, Address, Patient, MedicalSpecialty
 
 
 def register(request):
@@ -61,8 +61,9 @@ def is_already_logged(request):
 
 def redirect_template(request):
     if request.session.get('user_type') == 'patient':
-        context = {}
+        context = {'home_page': 'active'}
         template_name = 'patient_home.html'
+        print(context)
     elif request.session.get('user_type') == 'doctor':
         visits = get_visits_for_doctor(request.session.get('email'))
         context = {'visits': visits}
@@ -137,3 +138,21 @@ def get_visits_for_doctor(doctor_email):
         visits.append(visit)
 
     return visits
+
+
+def patient_alerts(request):
+    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
+    choices = ["Wybierz..."]
+    for m_specialty in medical_specialty_list:
+        choices.append(m_specialty[1])
+
+    alerts = [{'number': 1, 'specialty': 'ortopedia', 'city': 'Wrocław'},
+                      {'number': 2, 'specialty': 'ortopedia', 'city': 'Poznań'}]
+    cards_text = []
+    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Anna Nowak', 'datatime': '25.01.2021 godz. 10:00',
+                   'address': 'ul. Kwiatowa 12, Wrocław'})
+    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Jan Kowalski', 'datatime': '27.01.2021 godz. 13:25',
+                       'address': 'ul. Zdrowa 81a, Wrocław'})
+
+    return render(request, 'patient_alerts.html', context={'alert_page': 'active', 'specialties': choices, 'patient_alerts': alerts,
+                                                           'cards': cards_text})
