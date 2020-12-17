@@ -289,3 +289,4 @@ class DoctorForm(forms.ModelForm):
             doctor.save()
 
         return doctor
+

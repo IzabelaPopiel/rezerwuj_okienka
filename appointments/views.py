@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
-from appointments.models import Visit, Address, Patient
+from appointments.models import Visit, Address, Patient, Doctor, MedicalSpecialty
 
 
 def register(request):
@@ -106,6 +106,19 @@ def remove_visit(request, date_time):
 
         return render(request, 'doctor_home.html')
 
+def search_visit(request):
+    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
+    select = ["Wybierz..."]
+    for m_specialty in medical_specialty_list:
+        select.append(m_specialty[1])
+    visits = get_free_visits()
+    # return render(request,'search_visit.html')
+    context = {'visits': visits,'specialties': select}
+    template_name = 'search_visit.html'
+    return render(request, template_name, context)
+    # return template_name, context
+    # return render(request, 'search_visit.html')
+
 
 @login_required(login_url='/admin/login/')
 def add_doctor(request):
@@ -147,6 +160,38 @@ def get_visits_for_doctor(doctor_email):
         visit = {'first_name_patient': first_name_patient, 'last_name_patient': last_name_patient,
                  'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
                  'time': time, 'date': date, 'dateTime': date_time}
+        visits.append(visit)
+
+    return visits
+
+
+def get_free_visits():
+    visits = Visit.objects.filter(patient=None)
+    list_v = list(visits.all().values().values_list())
+    visits = []
+    print('tutaj')
+    for v in list_v:
+        print(v)
+        doctor = Doctor.objects.filter(email=v[2])
+        doctor_values = list(doctor.all().values().values_list())
+        print(doctor_values)
+        # first_name_doctor = 'Jan'
+        # last_name_doctor = 'Kowalski'
+        first_name_doctor = doctor_values[0][1]
+        last_name_doctor = doctor_values[0][2]
+        medical_specialty = doctor_values[0][3]
+
+        clinic_name = v[3]
+        address = Address.objects.filter(name=clinic_name).all().values().values_list()
+        address_street = f"ul. %s" % (address[0][2])
+        address_city = f"%s %s" % (address[0][4], address[0][3])
+        time = v[1].time().strftime("%H:%M")
+        date = v[1].date().strftime("%d/%m/%Y")
+        date_time = v[1].date().strftime("%Y-%m-%d") + " " + time
+
+        visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor, 'last_name_doctor': last_name_doctor,
+                 'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
+                 'time': time, 'date': date, }
         visits.append(visit)
 
     return visits
