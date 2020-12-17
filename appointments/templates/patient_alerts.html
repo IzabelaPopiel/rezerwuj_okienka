@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'patient_navbar.html' %}
+<br>
+<div class="row justify-content-center">
+    <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
+
+        <form action="POST">
+            <div class="row">
+                <div class="col-5">
+                    <h4>Specjalizacja</h4>
+                </div>
+                <div class="col-7">
+                    <h4>Miasto</h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-5">
+                    <select id="medical_specialty" class="form-control form-control">
+                        {% for speciality in specialties %}
+                        <option>{{ speciality }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-5">
+                    <input type="text" id="city" class="form-control" placeholder="Wpisz nazwę miasta...">
+                </div>
+                <div class="col-2">
+                    <button type="submit" class="btn btn-dark btn-alerts">Ustaw alert</button>
+                </div>
+            </div>
+        </form>
+
+        <br><br>
+
+        <div class="row justify-content-center">
+            <div class="col">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Specjalizacja</th>
+                        <th scope="col">Miasto</th>
+                        <th scope="col"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for alert in patient_alerts %}
+                    <tr>
+                        <th scope="row">{{alert.number}}</th>
+                        <td>{{alert.specialty}}</td>
+                        <td>{{alert.city}}</td>
+                        <td colspan="2">
+                            <span class="table-remove">
+                            <button onclick="remove" class="btn btn-sm" type="button" data-toggle="tooltip"
+                                    data-placement="left" title="Usuń ustawiony alert">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     class="bi bi-trash" viewBox="0 0 16 16">
+                                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                  <path fill-rule="evenodd"
+                                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                            </button>
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <br>
+
+        <div class="row">
+            {% for card in cards %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Pojawiło się nowe okienko!</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{card.specialty}}</h6>
+                        <p class="card-text">dr {{card.doctor}}</p>
+                        <p class="card-text">{{card.datatime}}</p>
+                        <p class="card-text">{{card.address}}</p>
+                        <a href="#" class="btn btn-light">Odrzuć</a>
+                        <a href="#" class="btn btn-dark btn-alerts">Rezerwuj</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+
+{% endblock %}
