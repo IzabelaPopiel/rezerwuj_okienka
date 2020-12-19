@@ -6,7 +6,10 @@
 <div class="row justify-content-center">
     <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
 
-        <form action="POST">
+        {% include 'error_message.html' %}
+        {% include 'success_message.html' %}
+
+        <form action="/appointments/home/alerts/" method="post">
             {% csrf_token %}
             <div class="row">
                 <div class="col-5">
@@ -17,15 +20,14 @@
                 </div>
             </div>
             <div class="row">
+                {% for field in alert_form %}
+                {% if field.name == 'city' or field.name == 'specialty' %}
                 <div class="col-5">
-                    {% for field in medical_specialties_form %}
                     {{ field }}
-                    {% endfor %}
                 </div>
+                {% endif %}
+                {% endfor %}
 
-                <div class="col-5">
-                    <input type="text" id="city" class="form-control" placeholder="Wpisz nazwę miasta...">
-                </div>
                 <div class="col-2">
                     <button type="submit" class="btn btn-dark btn-alerts">Ustaw alert</button>
                 </div>
