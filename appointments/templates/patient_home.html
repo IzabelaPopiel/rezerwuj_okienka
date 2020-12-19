@@ -1,6 +1,49 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% include 'patient_navbar.html' %}
 
+{% include 'patient_navbar.html' %}
+<div class="row justify-content-center">
+    <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
+        <table id="dtVerticalScrollExample" class="table table-striped table-bordered table-sm" cellspacing="0"
+               width="100%">
+            <thead>
+            <tr>
+                <th class="th-sm">Lekarz
+                </th>
+                <th class="th-sm"> Specjalizacja
+                </th>
+                <th class="th-sm" colspan="3">Adres
+                </th>
+                <th class="th-sm">Data
+                </th>
+                <th class="th-sm">Godzina
+                </th>
+                <th class="th-sm">
+            </tr>
+            </thead>
+            <tbody>
+            {% for visit in visits %}
+            <tr>
+                <td>{{visit.first_name_doctor}} {{visit.last_name_doctor}}</td>
+                <td>{{visit.medical_Specialty}}</td>
+                <td>{{visit.clinic_name}}</td>
+                <td>{{visit.address_street}}</td>
+                <td>{{visit.address_city}}</td>
+                <td>{{visit.date}}</td>
+                <td>{{visit.time}}</td>
+                <td align="center">
+                    <form action="" method="POST">
+                        {% csrf_token %}
+                        <input type="submit" onclick="return confirm('Czy na pewno chcesz usunąć wizytę?');"
+                               class="btn btn-info btn-sm" value="Usuń">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

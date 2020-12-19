@@ -3,6 +3,12 @@ from django.db import models
 from django import forms
 
 
+class Alert(models.Model):
+    specialty = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    patient = models.CharField(max_length=255, blank=True, null=True)
+
+
 class MedicalSpecialty(models.Model):
     specialty = models.CharField(max_length=255)
 

@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
-from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty
+from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty, Alert
 
 form_class_style = "form-control"
 form_class_style_radio = "form-check-input position-static"
@@ -23,6 +23,51 @@ def get_medical_specialties():
     for m_specialty in medical_specialty_list:
         choices.append((m_specialty[1], m_specialty[1]))
     return choices
+
+
+class AlertForm(forms.ModelForm):
+    specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
+                                  widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
+
+    class Meta:
+        model = Alert
+        fields = '__all__'
+        widgets = {
+            'city':  TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz nazwę miasta..."}),
+        }
+        labels = {
+            'city': 'Miasto'
+        }
+
+    def clean_city(self):
+        city = self.cleaned_data['city']
+        print(city)
+        if not city:
+            raise ValidationError("Należy wpisać nazwę miasta")
+        return city
+
+    def clean_specialty(self):
+        specialty = self.cleaned_data['specialty']
+        print(specialty)
+        if not specialty:
+            raise ValidationError("Należy wybrać specjalizację")
+        return specialty
+
+    def save(self, commit=True):
+        alert = super(AlertForm, self).save(commit=False)
+
+        alert.specialty = self.cleaned_data['specialty']
+        alert.city = self.cleaned_data['city']
+        alert.patient = self.cleaned_data['patient']
+
+        if commit:
+            x = Alert.objects.filter(specialty=alert.specialty, city=alert.city, patient=alert.patient)
+            if x.count():
+                alert = x
+            else:
+                alert.save()
+
+        return alert
 
 
 class MedicalSpecialtyForm(forms.Form):
