@@ -1,7 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm, MedicalSpecialtyForm
-from appointments.models import Visit, Address, Patient, MedicalSpecialty
+from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm, MedicalSpecialtyForm, AlertForm
+from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
+from django.contrib import messages
 
 
 def register(request):
@@ -134,7 +135,7 @@ def get_visits_for_doctor(doctor_email):
 
         visit = {'first_name_patient': first_name_patient, 'last_name_patient': last_name_patient,
                  'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
-                 'time': time, 'date': date }
+                 'time': time, 'date': date}
         visits.append(visit)
 
     return visits
@@ -142,14 +143,31 @@ def get_visits_for_doctor(doctor_email):
 
 def patient_alerts(request):
     medical_specialties_form = MedicalSpecialtyForm()
+    alert_form = AlertForm()
     alerts = [{'number': 1, 'specialty': 'ortopedia', 'city': 'Wrocław'},
-                      {'number': 2, 'specialty': 'ortopedia', 'city': 'Poznań'}]
+              {'number': 2, 'specialty': 'ortopedia', 'city': 'Poznań'}]
     cards_text = []
     cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Anna Nowak', 'datatime': '25.01.2021 godz. 10:00',
-                   'address': 'ul. Kwiatowa 12, Wrocław'})
+                       'address': 'ul. Kwiatowa 12, Wrocław'})
     cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Jan Kowalski', 'datatime': '27.01.2021 godz. 13:25',
                        'address': 'ul. Zdrowa 81a, Wrocław'})
 
-    return render(request, 'patient_alerts.html', context={'alert_page': 'active',
-                                                           'medical_specialties_form': medical_specialties_form,
-                                                           'patient_alerts': alerts, 'cards': cards_text})
+    context = {'alert_page': 'active', 'alert_form': alert_form,
+                                                       'medical_specialties_form': medical_specialties_form,
+                                                       'patient_alerts': alerts, 'cards': cards_text}
+
+    if request.method == 'POST':
+        alert_form = AlertForm(request.POST)
+        if alert_form.is_valid():
+            specialty = alert_form.data['specialty']
+            city = alert_form.data['city']
+            patient = request.session.get('email')
+            alert_form.cleaned_data['patient'] = patient
+            result = alert_form.save()
+            if result:
+                messages.success(request, "Pomyślnie ustawiono alert dla specjalizacji: %s oraz miasta: %s"
+                                 % (specialty, city))
+        else:
+            print(alert_form.errors)
+
+    return render(request, 'patient_alerts.html', context=context)
