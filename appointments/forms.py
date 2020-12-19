@@ -5,11 +5,7 @@ from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialt
 
 form_class_style = "form-control"
 form_class_style_radio = "form-check-input position-static"
-OPTIONS = (
-    ("S 1", "S 1"),
-    ("S 2", "S 2"),
-    ("S 3", "S 3"),
-)
+
 USER_TYPES = (
     ("doctor", "Lekarz"),
     ("patient", "Pacjent")
@@ -21,9 +17,17 @@ DATEPICKER = {
 }
 
 
+def get_medical_specialties():
+    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
+    choices = [("", "----------")]
+    for m_specialty in medical_specialty_list:
+        choices.append((m_specialty[1], m_specialty[1]))
+    return choices
+
+
 class MedicalSpecialtyForm(forms.Form):
-    specialty = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(
-        attrs={'class': 'custom-control-checkbox'}), choices=OPTIONS)
+    specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
+                                          widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
 
 
 class LoginForm(forms.ModelForm):
@@ -218,11 +222,6 @@ class AddressForm(forms.ModelForm):
 
 
 class DoctorForm(forms.ModelForm):
-    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
-    choices = [("", "----------")]
-    for m_specialty in medical_specialty_list:
-        choices.append((m_specialty[1], m_specialty[1]))
-
     password = forms.CharField(label="Hasło", max_length=255, min_length=8,
                                help_text="Musi zawierać co najmniej 8 znaków w tym znaki specjalne.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
@@ -232,7 +231,7 @@ class DoctorForm(forms.ModelForm):
                                                                         'placeholder': 'wpisz ponownie hasło...'}),
                                       max_length=255, min_length=8)
 
-    medical_Specialty = forms.ChoiceField(label="Specjalizacja", choices=list(choices),
+    medical_Specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
                                           widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
 
     class Meta:

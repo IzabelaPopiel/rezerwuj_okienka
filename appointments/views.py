@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
+from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm, MedicalSpecialtyForm
 from appointments.models import Visit, Address, Patient, MedicalSpecialty
 
 
@@ -141,11 +141,7 @@ def get_visits_for_doctor(doctor_email):
 
 
 def patient_alerts(request):
-    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
-    choices = ["Wybierz..."]
-    for m_specialty in medical_specialty_list:
-        choices.append(m_specialty[1])
-
+    medical_specialties_form = MedicalSpecialtyForm()
     alerts = [{'number': 1, 'specialty': 'ortopedia', 'city': 'Wrocław'},
                       {'number': 2, 'specialty': 'ortopedia', 'city': 'Poznań'}]
     cards_text = []
@@ -154,5 +150,6 @@ def patient_alerts(request):
     cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Jan Kowalski', 'datatime': '27.01.2021 godz. 13:25',
                        'address': 'ul. Zdrowa 81a, Wrocław'})
 
-    return render(request, 'patient_alerts.html', context={'alert_page': 'active', 'specialties': choices, 'patient_alerts': alerts,
-                                                           'cards': cards_text})
+    return render(request, 'patient_alerts.html', context={'alert_page': 'active',
+                                                           'medical_specialties_form': medical_specialties_form,
+                                                           'patient_alerts': alerts, 'cards': cards_text})
