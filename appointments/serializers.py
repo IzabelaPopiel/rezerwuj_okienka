@@ -1,5 +1,14 @@
 from rest_framework import serializers
-from appointments.models import Patient, Visit, Doctor, Address
+from appointments.models import Patient, Visit, Doctor, Address, Alert
+
+
+class AlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Alert
+        fields = ('id',
+                  'specialty',
+                  'city',
+                  'patient')
 
 
 class PatientSerializer(serializers.ModelSerializer):
