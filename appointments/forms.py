@@ -1,3 +1,4 @@
+import bcrypt
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
@@ -48,12 +49,21 @@ class LoginForm(forms.ModelForm):
         user_type = self.cleaned_data['user_type']
         email = self.cleaned_data['email']
         password = self.cleaned_data['password']
+        user_found = False
 
         if user_type == 'patient':
-            correct_email_password = Patient.objects.filter(email=email, password=password)
+            patient = Patient.objects.filter(email=email).first()
+            if patient:
+                hashed = getattr(patient, 'password')
+                if bcrypt.hashpw(password.encode('utf-8'), hashed.encode('utf-8')) == hashed.encode('utf-8'):
+                    user_found = True
         elif user_type == 'doctor':
-            correct_email_password = Doctor.objects.filter(email=email, password=password)
-        if not correct_email_password.count():
+            doctor = Doctor.objects.filter(email=email).first()
+            if doctor:
+                hashed = getattr(doctor, 'password')
+                if bcrypt.hashpw(password.encode('utf-8'), hashed.encode('utf-8')) == hashed.encode('utf-8'):
+                    user_found = True
+        if not user_found:
             raise ValidationError("Adres email, hasło lub typ użytkownika nieprawidłowe")
 
         return cleaned_data
@@ -135,7 +145,7 @@ class PatientForm(forms.ModelForm):
         patient.last_name = self.cleaned_data['last_name']
         patient.pesel = self.cleaned_data['pesel']
         patient.email = self.cleaned_data['email']
-        patient.password = self.cleaned_data['password']
+        patient.password = bcrypt.hashpw(self.cleaned_data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         if commit:
             patient.save()
@@ -283,7 +293,7 @@ class DoctorForm(forms.ModelForm):
         doctor.last_name = self.cleaned_data['last_name']
         doctor.email = self.cleaned_data['email']
         doctor.medical_Specialty = self.cleaned_data['medical_Specialty']
-        doctor.password = self.cleaned_data['password']
+        doctor.password = bcrypt.hashpw(self.cleaned_data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         if commit:
             doctor.save()
