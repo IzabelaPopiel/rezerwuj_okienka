@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
-from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm, MedicalSpecialtyForm, AlertForm
+from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm, MedicalSpecialtyForm, \
+    AlertForm
 from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
 from django.contrib import messages
 
@@ -144,18 +146,7 @@ def get_visits_for_doctor(doctor_email):
 def patient_alerts(request):
     medical_specialties_form = MedicalSpecialtyForm()
     alert_form = AlertForm()
-    alerts = [{'number': 1, 'specialty': 'ortopedia', 'city': 'Wrocław'},
-              {'number': 2, 'specialty': 'ortopedia', 'city': 'Poznań'}]
-    cards_text = []
-    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Anna Nowak', 'datatime': '25.01.2021 godz. 10:00',
-                       'address': 'ul. Kwiatowa 12, Wrocław'})
-    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Jan Kowalski', 'datatime': '27.01.2021 godz. 13:25',
-                       'address': 'ul. Zdrowa 81a, Wrocław'})
-
-    context = {'alert_page': 'active', 'alert_form': alert_form,
-                                                       'medical_specialties_form': medical_specialties_form,
-                                                       'patient_alerts': alerts, 'cards': cards_text}
-
+    patient_mail = request.session.get('email')
     if request.method == 'POST':
         alert_form = AlertForm(request.POST)
         if alert_form.is_valid():
@@ -167,7 +158,53 @@ def patient_alerts(request):
             if result:
                 messages.success(request, "Pomyślnie ustawiono alert dla specjalizacji: %s oraz miasta: %s"
                                  % (specialty, city))
+
         else:
             print(alert_form.errors)
 
+    list_patient_alerts = Alert.objects.filter(patient=patient_mail)
+    list_alerts = list(list_patient_alerts.all().values().values_list())
+    alerts = []
+    i = 0
+    for a in list_alerts:
+        i += 1
+        alert = {'number': i, 'specialty': a[1], 'city': a[2]}
+        alerts.append(alert)
+
+    page = request.GET.get('page', 1)
+    paginator = Paginator(alerts, 3)
+
+    try:
+        contacts = paginator.page(page)
+    except PageNotAnInteger:
+        contacts = paginator.page(1)
+    except EmptyPage:
+        contacts = paginator.page(paginator.num_pages)
+
+    cards_text = []
+    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Anna Nowak', 'datatime': '25.01.2021 godz. 10:00',
+                       'address': 'ul. Kwiatowa 12, Wrocław'})
+    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Jan Kowalski', 'datatime': '27.01.2021 godz. 13:25',
+                       'address': 'ul. Zdrowa 81a, Wrocław'})
+
+    context = {'alert_page': 'active', 'alert_form': alert_form,
+               'medical_specialties_form': medical_specialties_form,
+               'patient_alerts': contacts, 'cards': cards_text, }
+
     return render(request, 'patient_alerts.html', context=context)
+
+
+def remove_alert(request, specialty, city):
+    patient_mail = request.session.get('email')
+
+    visit = Alert.objects.filter(patient=patient_mail, specialty=specialty, city=city)
+
+    if request.method == 'POST':
+        if visit.delete():
+            messages.success(request, "Pomyślnie usunięto alert dla specjalizacji: %s oraz miasta: %s"
+                             % (specialty, city))
+
+        return redirect('/appointments/home/alerts/')
+    else:
+
+        return render(request, 'patient_alerts.html')

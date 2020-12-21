@@ -52,10 +52,17 @@
                     <tr>
                         <th scope="row">{{alert.number}}</th>
                         <td>{{alert.specialty}}</td>
-                        <td>{{alert.city}}</td>
-                        <td colspan="2">
+                        <td>{{alert.city}}
+
+                        <td colspan="1">
                             <span class="table-remove">
-                            <button onclick="remove" class="btn btn-sm" type="button" data-toggle="tooltip"
+
+                            <form action="{% url 'appointments:remove_alert' alert.specialty  alert.city%}"
+                                  method="POST">
+                                    {% csrf_token %}
+
+                            <button onclick="return confirm('Czy na pewno chcesz usunąć alert?');" class="btn btn-sm"
+                                    type="submit" data-toggle="tooltip"
                                     data-placement="left" title="Usuń ustawiony alert">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                      class="bi bi-trash" viewBox="0 0 16 16">
@@ -64,7 +71,10 @@
                                         d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                                 </svg>
                             </button>
+    </form>
+
                             </span>
+
                         </td>
                     </tr>
                     {% endfor %}
@@ -73,24 +83,33 @@
             </div>
         </div>
 
-        <nav aria-label="Page navigation example">
-            <ul class="pagination justify-content-center">
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                        <span class="sr-only">Previous</span>
-                    </a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                        <span class="sr-only">Next</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+        {% if patient_alerts.has_other_pages %}
+
+        <ul class="pagination justify-content-center">
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    {% if patient_alerts.has_previous %}
+                    <li><a href="?page={{ patient_alerts.previous_page_number }}">&laquo;</a></li>
+                    {% else %}
+                    <li class="disabled"><span>&laquo;</span></li>
+                    {% endif %}
+                    {% for i in patient_alerts.paginator.page_range %}
+                    {% if patient_alerts.number == i %}
+                    <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                    {% else %}
+                    <li><a href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    {% if patient_alerts.has_next %}
+                    <li><a href="?page={{ patient_alerts.next_page_number }}">&raquo;</a></li>
+                    {% else %}
+                    <li class="disabled"><span>&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </ul>
+        {% endif %}
+
 
         <br>
 
