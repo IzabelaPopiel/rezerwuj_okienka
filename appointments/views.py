@@ -1,3 +1,4 @@
+from bson import json_util
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
@@ -5,6 +6,7 @@ from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, Doct
     AlertForm
 from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
 from django.contrib import messages
+import json
 
 
 def register(request):
@@ -13,6 +15,7 @@ def register(request):
     elif request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
+            form.cleaned_data['slots'] = {'slots': []}
             form.save()
             return redirect('/appointments/home/')
         else:
@@ -66,7 +69,6 @@ def redirect_template(request):
     if request.session.get('user_type') == 'patient':
         context = {'home_page': 'active'}
         template_name = 'patient_home.html'
-        print(context)
     elif request.session.get('user_type') == 'doctor':
         visits = get_visits_for_doctor(request.session.get('email'))
         context = {'visits': visits}
@@ -88,7 +90,13 @@ def add_visit(request):
 
             visit_form.cleaned_data['address'] = address_name
             visit_form.cleaned_data['doctor'] = doctor_mail
-            visit_form.save()
+            visit_pk = visit_form.save()
+
+            if visit_pk:
+                set_slots_for_patients(visit_pk, doctor_mail, address)
+                messages.success(request, "Utworzono wizytę")
+            else:
+                messages.info(request, "Wizyta o podanych parametrach została już wcześniej utworzona")
 
             return redirect('/appointments/home/')
         else:
@@ -97,6 +105,30 @@ def add_visit(request):
         address_form = AddressForm()
         visit_form = VisitForm()
     return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form})
+
+
+def set_slots_for_patients(visit_pk, doctor_email, address):
+    doctor = Doctor.objects.get(email=doctor_email)
+    specialty = doctor.medical_Specialty
+
+    city = address.all().values().values_list()[0][3]
+
+    alerts = Alert.objects.filter(specialty=specialty, city=city).values().values_list()
+    patients_emails = []
+
+    for a in alerts:
+        p_email = a[3]
+        patients_emails.append(p_email)
+
+        patient = Patient.objects.filter(email=p_email)
+        slots_json = patient.values().values_list()[0][6]
+        slots = slots_json['slots']
+        slots_list = list(slots)
+        slots_list.append(visit_pk)
+        d = {"slots": slots_list}
+        patient.update(slots=parse_json(d))
+
+    # here will be send emails
 
 
 def remove_visit(request, date_time):
@@ -109,6 +141,7 @@ def remove_visit(request, date_time):
     else:
 
         return render(request, 'doctor_home.html')
+
 
 def search_visit(request):
     medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
@@ -235,6 +268,7 @@ def remove_alert(request, specialty, city):
 
         return render(request, 'patient_alerts.html')
 
+
 def search_visit(request):
     medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
     select = ["Wybierz..."]
@@ -244,6 +278,7 @@ def search_visit(request):
     context = {'search_visit_page': 'active', 'visits': visits,'specialties': select}
     template_name = 'search_visit.html'
     return render(request, template_name, context)
+
 
 def get_free_visits():
     visits = Visit.objects.filter(patient=None)
@@ -275,3 +310,7 @@ def get_free_visits():
         visits.append(visit)
 
     return visits
+
+
+def parse_json(data):
+    return json.loads(json_util.dumps(data))

@@ -185,6 +185,7 @@ class PatientForm(forms.ModelForm):
         patient.pesel = self.cleaned_data['pesel']
         patient.email = self.cleaned_data['email']
         patient.password = self.cleaned_data['password']
+        patient.slots = self.cleaned_data['slots']
 
         if commit:
             patient.save()
@@ -220,14 +221,15 @@ class VisitForm(forms.ModelForm):
         visit.doctor = self.cleaned_data['doctor']
         visit.date = self.cleaned_data['date']
 
+        visit_pk = None
+
         if commit:
             x = Visit.objects.filter(doctor=visit.doctor, date=visit.date)
-            if x.count():
-                visit = x
-            else:
+            if not x.count():
                 visit.save()
+                visit_pk = visit.pk
 
-        return visit
+        return visit_pk
 
 
 class AddressForm(forms.ModelForm):

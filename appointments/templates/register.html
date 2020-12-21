@@ -10,6 +10,7 @@
         {% csrf_token %}
 
         {% for field in form %}
+        {% if not field is form.slots %}
         <div class="row justify-content-center">
             <div class="form-group col-md-offset-3 col-md-6 col-md-offset-3">
                 {{ field.label_tag }}
@@ -26,6 +27,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
         {% endfor %}
 
         <div class="row justify-content-center">

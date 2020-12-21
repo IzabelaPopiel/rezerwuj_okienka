@@ -1,6 +1,5 @@
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
-from django import forms
 
 
 class Alert(models.Model):
@@ -27,6 +26,7 @@ class Patient(models.Model):
     pesel = models.CharField(max_length=11, validators=[RegexValidator(r'^\d{11,11}$')])
     email = models.EmailField(max_length=255)
     password = models.CharField(max_length=255)
+    slots = models.JSONField(default=dict)
 
 
 class Address(models.Model):
@@ -38,9 +38,6 @@ class Address(models.Model):
 
 class Visit(models.Model):
     date = models.DateTimeField()
-    # doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
     doctor = models.CharField(max_length=255, blank=True, null=True) # email doctor
-    # location = models.ForeignKey(Address, on_delete=models.CASCADE)
     address = models.CharField(max_length=255, blank=True, null=True) # address name
-    # patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     patient = models.CharField(max_length=255, blank=True, null=True) # email patient

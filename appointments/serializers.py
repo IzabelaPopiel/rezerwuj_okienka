@@ -19,7 +19,8 @@ class PatientSerializer(serializers.ModelSerializer):
                   'last_name',
                   'pesel',
                   'email',
-                  'password')
+                  'password',
+                  'slots')
 
 
 class DoctorSerializer(serializers.ModelSerializer):
