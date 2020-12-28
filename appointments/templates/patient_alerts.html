@@ -123,8 +123,23 @@
                         <p class="card-text">dr {{card.doctor}}</p>
                         <p class="card-text">{{card.datatime}}</p>
                         <p class="card-text">{{card.address}}</p>
-                        <a href="#" class="btn btn-light">Odrzuć</a>
-                        <a href="#" class="btn btn-dark btn-alerts">Rezerwuj</a>
+                        <form action="{% url 'appointments:remove_slot' card.visit_id%}"
+                              method="POST">
+                            {% csrf_token %}
+
+                            <button onclick="return confirm('Czy na pewno chcesz odrzucić okienko?');" class="btn btn-light"
+                                    type="submit">Odrzuć
+                            </button>
+                        </form>
+
+                        <form action="{% url 'appointments:accept_slot' card.visit_id%}"
+                              method="POST">
+                            {% csrf_token %}
+
+                            <button onclick="return confirm('Czy na pewno chcesz zarezerwować okienko?');" class="btn btn-dark btn-alerts"
+                                    type="submit">Rezerwuj
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

@@ -152,7 +152,7 @@ def search_visit(request):
         select.append(m_specialty[1])
     visits = get_free_visits()
     # return render(request,'search_visit.html')
-    context = {'visits': visits,'specialties': select}
+    context = {'visits': visits, 'specialties': select}
     template_name = 'search_visit.html'
     return render(request, template_name, context)
     # return template_name, context
@@ -286,13 +286,21 @@ def remove_alert(request, specialty, city):
         return render(request, 'patient_alerts.html')
 
 
+def remove_slot(request, visit_id):
+    return redirect('/appointments/home/alerts/')
+
+
+def accept_slot(request, visit_id):
+    return redirect('/appointments/home/alerts/')
+
+
 def search_visit(request):
     medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
     select = ["Wybierz..."]
     for m_specialty in medical_specialty_list:
         select.append(m_specialty[1])
     visits = get_free_visits()
-    context = {'search_visit_page': 'active', 'visits': visits,'specialties': select}
+    context = {'search_visit_page': 'active', 'visits': visits, 'specialties': select}
     template_name = 'search_visit.html'
     return render(request, template_name, context)
 
@@ -321,7 +329,8 @@ def get_free_visits():
         date = v[1].date().strftime("%d/%m/%Y")
         date_time = v[1].date().strftime("%Y-%m-%d") + " " + time
 
-        visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor, 'last_name_doctor': last_name_doctor,
+        visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
+                 'last_name_doctor': last_name_doctor,
                  'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
                  'time': time, 'date': date, }
         visits.append(visit)

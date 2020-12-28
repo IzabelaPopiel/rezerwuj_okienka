@@ -14,4 +14,6 @@ urlpatterns = [
     path('home/alerts/', views.patient_alerts, name='patient_alerts'),
     path('home/search_visit', views.search_visit, name='search_visit'),
     path('home/alerts/delete/<str:specialty>/<str:city>/', views.remove_alert, name='remove_alert'),
+    path('home/slots/delete/<str:visit_id>/', views.remove_slot, name='remove_slot'),
+    path('home/slots/accept/<str:visit_id>/', views.accept_slot, name='accept_slot'),
 ]
