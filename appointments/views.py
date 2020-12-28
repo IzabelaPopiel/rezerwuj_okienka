@@ -246,14 +246,12 @@ def patient_alerts(request):
     patient_slots = json.loads(patient_slots_str)["slots"]
 
     visit_collection = pymongo.MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-    matching_visits = []
+    cards_text = []
+
     for slot in patient_slots:
         visit_id = slot['$oid']
         matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
-        matching_visits.append(matching_visit)
 
-    cards_text = []
-    for matching_visit in matching_visits:
         date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
             "date"].time().strftime("%H:%M")
         specialty = getattr(Doctor.objects.filter(email=matching_visit["doctor"]).first(), 'medical_Specialty')
@@ -263,7 +261,7 @@ def patient_alerts(request):
 
         cards_text.append(
             {'specialty': specialty, 'doctor': matching_visit["doctor"], 'datatime': date_format,
-             'address': full_address})
+             'address': full_address, 'visit_id': visit_id})
 
     context = {'alert_page': 'active', 'alert_form': alert_form,
                'medical_specialties_form': medical_specialties_form,
