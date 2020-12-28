@@ -1,4 +1,5 @@
-from bson import json_util
+import pymongo
+from bson import json_util, ObjectId
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
@@ -7,6 +8,7 @@ from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, Doct
 from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
 from django.contrib import messages
 import json
+from reservationsystem import config
 
 
 def register(request):
@@ -240,11 +242,28 @@ def patient_alerts(request):
     except EmptyPage:
         contacts = paginator.page(paginator.num_pages)
 
+    patient_slots_str = getattr(Patient.objects.filter(email=patient_mail).first(), 'slots')
+    patient_slots = json.loads(patient_slots_str)["slots"]
+
+    visit_collection = pymongo.MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
+    matching_visits = []
+    for slot in patient_slots:
+        visit_id = slot['$oid']
+        matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
+        matching_visits.append(matching_visit)
+
     cards_text = []
-    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Anna Nowak', 'datatime': '25.01.2021 godz. 10:00',
-                       'address': 'ul. Kwiatowa 12, Wrocław'})
-    cards_text.append({'specialty': 'Ortopedia', 'doctor': 'Jan Kowalski', 'datatime': '27.01.2021 godz. 13:25',
-                       'address': 'ul. Zdrowa 81a, Wrocław'})
+    for matching_visit in matching_visits:
+        date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
+            "date"].time().strftime("%H:%M")
+        specialty = getattr(Doctor.objects.filter(email=matching_visit["doctor"]).first(), 'medical_Specialty')
+        clinic_address = Address.objects.filter(name=matching_visit["address"]).first()
+        full_address = matching_visit["address"] + " ul. " + getattr(clinic_address, 'street') + ", " + getattr(
+            clinic_address, 'city')
+
+        cards_text.append(
+            {'specialty': specialty, 'doctor': matching_visit["doctor"], 'datatime': date_format,
+             'address': full_address})
 
     context = {'alert_page': 'active', 'alert_form': alert_form,
                'medical_specialties_form': medical_specialties_form,
