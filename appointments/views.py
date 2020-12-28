@@ -1,8 +1,8 @@
-import pymongo
 from bson import json_util, ObjectId
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
+from pymongo import MongoClient
 from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, DoctorForm, VisitForm, MedicalSpecialtyForm, \
     AlertForm
 from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
@@ -243,13 +243,13 @@ def patient_alerts(request):
         contacts = paginator.page(paginator.num_pages)
 
     patient_slots_str = getattr(Patient.objects.filter(email=patient_mail).first(), 'slots')
-    patient_slots = json.loads(patient_slots_str)["slots"]
+    patient_slots = parse_json(patient_slots_str)["slots"]
 
-    visit_collection = pymongo.MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
+    visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
     cards_text = []
 
     for slot in patient_slots:
-        visit_id = slot['$oid']
+        visit_id = slot['oid']
         matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
 
         date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
@@ -287,7 +287,23 @@ def remove_alert(request, specialty, city):
 
 
 def remove_slot(request, visit_id):
-    return redirect('/appointments/home/alerts/')
+    patient_mail = request.session.get('email')
+    patient = Patient.objects.filter(email=patient_mail)
+
+    if request.method == 'POST':
+        patient_slots_str = getattr(patient.first(), 'slots')
+        patient_slots = json.loads(patient_slots_str)["slots"]
+        patient_slots.remove({'oid': visit_id})
+
+        if patient.update(slots=parse_json({"slots": patient_slots})):
+            messages.success(request, "Pomyślnie odrzucono okienko")
+        else:
+            messages.error(request, "Wystąpił błąd, spróbuj ponownie")
+
+        return redirect('/appointments/home/alerts/')
+    else:
+
+        return render(request, 'patient_alerts.html')
 
 
 def accept_slot(request, visit_id):
