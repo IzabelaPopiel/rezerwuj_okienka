@@ -7,6 +7,10 @@ from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, Doct
 from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
 from django.contrib import messages
 import json
+import smtplib
+from reservationsystem import email
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 def register(request):
@@ -128,7 +132,34 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
         d = {"slots": slots_list}
         patient.update(slots=parse_json(d))
 
-    # here will be send emails
+    send_emails(patients_emails, specialty, city)
+
+
+def send_emails(patients_emails, medical_specialty, city):
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    email_address = email.email_address
+    password = email.password
+    server.login(email_address, password)
+
+    from_address = email_address
+
+    msg = MIMEMultipart()
+    msg['From'] = from_address
+    msg['Subject'] = "Nowe okienko!"
+    body = f"Pojawiło się nowe okienko dla specjalności %s oraz miasta %s\n\nAby dokonać rezerwacji zaloguj się na " \
+           f"swoje konto http://127.0.0.1:8000/appointments/login/" % (medical_specialty, city)
+    msg.attach(MIMEText(body, 'plain'))
+
+    text = msg.as_string()
+
+    for patient_email in patients_emails:
+        server.sendmail(from_address, patient_email, text)
+
+    # to_address = "youremailaddress@example.com"
+    # server.sendmail(from_address, to_address, text)
 
 
 def remove_visit(request, date_time):
@@ -150,7 +181,7 @@ def search_visit(request):
         select.append(m_specialty[1])
     visits = get_free_visits()
     # return render(request,'search_visit.html')
-    context = {'visits': visits,'specialties': select}
+    context = {'visits': visits, 'specialties': select}
     template_name = 'search_visit.html'
     return render(request, template_name, context)
     # return template_name, context
@@ -275,7 +306,7 @@ def search_visit(request):
     for m_specialty in medical_specialty_list:
         select.append(m_specialty[1])
     visits = get_free_visits()
-    context = {'search_visit_page': 'active', 'visits': visits,'specialties': select}
+    context = {'search_visit_page': 'active', 'visits': visits, 'specialties': select}
     template_name = 'search_visit.html'
     return render(request, template_name, context)
 
@@ -304,7 +335,8 @@ def get_free_visits():
         date = v[1].date().strftime("%d/%m/%Y")
         date_time = v[1].date().strftime("%Y-%m-%d") + " " + time
 
-        visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor, 'last_name_doctor': last_name_doctor,
+        visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
+                 'last_name_doctor': last_name_doctor,
                  'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
                  'time': time, 'date': date, }
         visits.append(visit)
