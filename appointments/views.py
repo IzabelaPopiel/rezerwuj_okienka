@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm
 from appointments.models import Visit, Address, Patient
+import re
 
 
 def register(request):
@@ -73,27 +74,68 @@ def redirect_template(request):
 
 def add_visit(request):
     doctor_mail = request.session.get('email')
+    options = []
 
     if request.method == 'POST':
+        radio = request.POST['radios']
+        address_name_flag = True
         address_form = AddressForm(request.POST)
         visit_form = VisitForm(request.POST)
 
-        if address_form.is_valid() and visit_form.is_valid():
-            address = address_form.save()
+        if radio == 'enter':
+            if address_form.is_valid():
+                address_name_flag = check_address_form(address_form)
+                if address_name_flag:
+                    address = address_form.save()
+                    address_name = address.all().values().values_list()[0][1]
+                else:
+                    messages.warning(request, "Uzupełnij poprawnie pola adresu")
 
-            address_name = address.all().values().values_list()[0][1]
-
-            visit_form.cleaned_data['address'] = address_name
-            visit_form.cleaned_data['doctor'] = doctor_mail
-            visit_form.save()
-
-            return redirect('/appointments/home/')
         else:
-            print(address_form.errors, visit_form.errors)
+            address_name = request.POST['selectAddress']
+            if address_name == '-----':
+                address_name_flag = False
+                messages.warning(request, "Wybierz placówkę")
+
+        if address_name_flag:
+            if visit_form.is_valid():
+                visit_form.cleaned_data['address'] = address_name
+                visit_form.cleaned_data['doctor'] = doctor_mail
+                visit_form.save()
+
+                messages.success(request, "Dodano wizytę")
+                return redirect('/appointments/home/')
+            else:
+                messages.warning(request, "Wybierz datę i godzinę")
+                print(address_form.errors, visit_form.errors)
+
     else:
         address_form = AddressForm()
         visit_form = VisitForm()
-    return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form})
+        addresses = Address.objects.all().values().values_list()
+        for address in addresses:
+            options.append(address[1])
+
+    return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form,
+                                              'options': options})
+
+
+def check_address_form(address_form: AddressForm):
+    result = True
+    city = address_form.cleaned_data['city']
+    if len(city) == 0 or not city.istitle():
+        result = False
+    postcode = address_form.cleaned_data['postcode']
+    if len(postcode) == 0 or not re.match("^\d\d-\d\d\d$", postcode):
+        result = False
+    street = address_form.cleaned_data['street']
+    if len(street) == 0 or not street.istitle():
+        result = False
+    name = address_form.cleaned_data['name']
+    if len(name) == 0 or not name.istitle():
+        result = False
+
+    return result
 
 
 @login_required(login_url='/admin/login/')
@@ -136,7 +178,7 @@ def get_visits_for_doctor(doctor_email):
 
         visit = {'first_name_patient': first_name_patient, 'last_name_patient': last_name_patient,
                  'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
-                 'time': time, 'date': date }
+                 'time': time, 'date': date}
         visits.append(visit)
 
     return visits
