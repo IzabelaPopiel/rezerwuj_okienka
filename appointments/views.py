@@ -249,19 +249,20 @@ def patient_alerts(request):
     cards_text = []
 
     for slot in patient_slots:
-        visit_id = slot['oid']
+        visit_id = slot['$oid']
+        print(visit_id)
         matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
+        if matching_visit:
+            date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
+                "date"].time().strftime("%H:%M")
+            specialty = getattr(Doctor.objects.filter(email=matching_visit["doctor"]).first(), 'medical_Specialty')
+            clinic_address = Address.objects.filter(name=matching_visit["address"]).first()
+            full_address = matching_visit["address"] + " ul. " + getattr(clinic_address, 'street') + ", " + getattr(
+                clinic_address, 'city')
 
-        date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
-            "date"].time().strftime("%H:%M")
-        specialty = getattr(Doctor.objects.filter(email=matching_visit["doctor"]).first(), 'medical_Specialty')
-        clinic_address = Address.objects.filter(name=matching_visit["address"]).first()
-        full_address = matching_visit["address"] + " ul. " + getattr(clinic_address, 'street') + ", " + getattr(
-            clinic_address, 'city')
-
-        cards_text.append(
-            {'specialty': specialty, 'doctor': matching_visit["doctor"], 'datatime': date_format,
-             'address': full_address, 'visit_id': visit_id})
+            cards_text.append(
+                {'specialty': specialty, 'doctor': matching_visit["doctor"], 'datatime': date_format,
+                 'address': full_address, 'visit_id': visit_id})
 
     context = {'alert_page': 'active', 'alert_form': alert_form,
                'medical_specialties_form': medical_specialties_form,
@@ -293,7 +294,7 @@ def remove_slot(request, visit_id):
     if request.method == 'POST':
         patient_slots_str = getattr(patient.first(), 'slots')
         patient_slots = json.loads(patient_slots_str)["slots"]
-        patient_slots.remove({'oid': visit_id})
+        patient_slots.remove({'$oid': visit_id})
 
         if patient.update(slots=parse_json({"slots": patient_slots})):
             messages.success(request, "Pomyślnie odrzucono okienko")
