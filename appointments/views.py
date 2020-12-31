@@ -84,7 +84,6 @@ def redirect_template(request):
     return template_name, context
 
 
-
 def get_patient_visits(patient_mail):
     visits = []
     visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
@@ -93,8 +92,6 @@ def get_patient_visits(patient_mail):
     for v in matching_visit:
         now = datetime.now()
         if v['date'] > now:
-
-
             doctor = Doctor.objects.filter(email=v["doctor"])
             doctor_values = list(doctor.all().values().values_list())
 
@@ -114,7 +111,7 @@ def get_patient_visits(patient_mail):
             visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
                      'last_name_doctor': last_name_doctor,
                      'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
-                     'time': time, 'date': date,'visit_id': visit_id }
+                     'time': time, 'date': date, 'visit_id': visit_id}
             visits.append(visit)
 
     return visits
@@ -175,22 +172,23 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
 
     # here will be send emails
 
+
 def remove_slots_help(visit_id):
     booked = False
     patient_collection = Patient.objects.all().values('email')
     for p in patient_collection:
 
-            patient = Patient.objects.filter(email=p['email'])
-            patient_slots_str = getattr(patient.first(), 'slots')
+        patient = Patient.objects.filter(email=p['email'])
+        patient_slots_str = getattr(patient.first(), 'slots')
 
-            if patient_slots_str is not None:
-                patient_slots = parse_json(patient_slots_str)["slots"]
-                try:
-                    patient_slots.remove({'$oid': str(visit_id)})
-                    if patient.update(slots=parse_json({"slots": patient_slots})):
-                        booked = True
-                except ValueError:
-                    print("ValueError")
+        if patient_slots_str is not None:
+            patient_slots = parse_json(patient_slots_str)["slots"]
+            try:
+                patient_slots.remove({'$oid': str(visit_id)})
+                if patient.update(slots=parse_json({"slots": patient_slots})):
+                    booked = True
+            except ValueError:
+                print("ValueError")
     return booked
 
 
@@ -203,7 +201,6 @@ def remove_visit(request, date_time):
         matching_visit = visit_collection.find_one({'doctor': doctor_mail, 'date': visit.date})
         visit_id = matching_visit["_id"]
         booked = remove_slots_help(visit_id)
-
 
         if booked:
             messages.success(request, "Pomyślnie usunięto wizytę")
@@ -364,7 +361,7 @@ def remove_slot(request, visit_id):
 
     if request.method == 'POST':
         patient_slots_str = getattr(patient.first(), 'slots')
-        patient_slots = json.loads(patient_slots_str)["slots"]
+        patient_slots = parse_json(patient_slots_str)["slots"]
         patient_slots.remove({'$oid': visit_id})
 
         if patient.update(slots=parse_json({"slots": patient_slots})):
@@ -382,7 +379,7 @@ def book_visit(request, visit_id):
     patient_mail = request.session.get('email')
     if request.method == 'POST':
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-        visit_collection.update_one({'_id': ObjectId(visit_id)},{"$set":{"patient":patient_mail}})
+        visit_collection.update_one({'_id': ObjectId(visit_id)}, {"$set": {"patient": patient_mail}})
         remove_slots_help(visit_id)
         return redirect('/appointments/home/search_visit')
     else:
@@ -397,7 +394,7 @@ def accept_slot(request, visit_id):
         matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
 
         if matching_visit['patient'] == None:
-            visit_collection.update_one({'_id': ObjectId(visit_id)},{"$set":{"patient":patient_mail}})
+            visit_collection.update_one({'_id': ObjectId(visit_id)}, {"$set": {"patient": patient_mail}})
             booked = remove_slots_help(visit_id)
 
         if booked:
@@ -450,7 +447,7 @@ def get_free_visits():
         visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
                  'last_name_doctor': last_name_doctor,
                  'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
-                 'time': time, 'date': date,'visit_id': visit_id }
+                 'time': time, 'date': date, 'visit_id': visit_id}
         visits.append(visit)
 
     return visits
