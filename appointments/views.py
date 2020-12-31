@@ -323,13 +323,17 @@ def patient_alerts(request):
         if matching_visit:
             date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
                 "date"].time().strftime("%H:%M")
-            specialty = getattr(Doctor.objects.filter(email=matching_visit["doctor"]).first(), 'medical_Specialty')
+            doctor = Doctor.objects.filter(email=matching_visit["doctor"]).first()
+            doc_first_name = getattr(doctor, 'first_name')
+            doc_last_name = getattr(doctor, 'last_name')
+            doc_name = doc_first_name + " " + doc_last_name
+            specialty = getattr(doctor, 'medical_Specialty')
             clinic_address = Address.objects.filter(name=matching_visit["address"]).first()
             full_address = matching_visit["address"] + " ul. " + getattr(clinic_address, 'street') + ", " + getattr(
                 clinic_address, 'city')
 
             cards_text.append(
-                {'specialty': specialty, 'doctor': matching_visit["doctor"], 'datatime': date_format,
+                {'specialty': specialty, 'doctor': doc_name, 'datatime': date_format,
                  'address': full_address, 'visit_id': visit_id})
 
     context = {'alert_page': 'active', 'alert_form': alert_form,
