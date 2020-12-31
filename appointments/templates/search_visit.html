@@ -95,8 +95,9 @@
                 <td align="center">{{visit.date}}</td>
                 <td align="center">{{visit.time}}</td>
                 <td align="center">
-                    <form method="POST">
-                        {% csrf_token %}
+                    <form action="{% url 'appointments:book_visit' visit.visit_id%}"
+                              method="POST">
+                            {% csrf_token %}
 
                         <button type="submit" onclick="return confirm('Czy na pewno chcesz zarezerwować wizytę?');"
                                 class="btn btn-secondary btn-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
