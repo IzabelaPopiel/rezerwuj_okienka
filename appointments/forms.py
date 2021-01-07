@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
 from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty
 
@@ -20,6 +21,10 @@ DATEPICKER = {
     'id': 'datetimepicker4'
 }
 
+password_validator = RegexValidator(
+    regex="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{8,}$",
+    message=
+    "Hasło musi zawierać przynjamniej jedną dużą literę, małą literę i znak specjalny")
 
 class MedicalSpecialtyForm(forms.Form):
     specialty = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(
@@ -60,8 +65,8 @@ class LoginForm(forms.ModelForm):
 
 
 class PatientForm(forms.ModelForm):
-    password = forms.CharField(label="Hasło", max_length=255, min_length=8,
-                               help_text="Musi zawierać co najmniej 8 znaków w tym znaki specjalne.",
+    password = forms.CharField(label="Hasło", max_length=255, min_length=8, validators=[password_validator],
+                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę i znak specjalny bez polskich liter.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
                                                                  'placeholder': "wpisz hasło..."}))
     password_repeat = forms.CharField(label="Potwierdzenie hasła",
@@ -124,7 +129,7 @@ class PatientForm(forms.ModelForm):
         password_repeat = self.cleaned_data.get('password_repeat')
         print(password)
         print(password_repeat)
-        if password != password_repeat:
+        if (password != password_repeat) and (password is not None):
             raise ValidationError("Hasła nie są identyczne")
         return password_repeat
 
@@ -223,8 +228,8 @@ class DoctorForm(forms.ModelForm):
     for m_specialty in medical_specialty_list:
         choices.append((m_specialty[1], m_specialty[1]))
 
-    password = forms.CharField(label="Hasło", max_length=255, min_length=8,
-                               help_text="Musi zawierać co najmniej 8 znaków w tym znaki specjalne.",
+    password = forms.CharField(label="Hasło", max_length=255, min_length=8, validators=[password_validator],
+                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę i znak specjalny bez polskich liter.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
                                                                  'placeholder': "wpisz hasło..."}))
     password_repeat = forms.CharField(label="Potwierdzenie hasła",
@@ -252,7 +257,7 @@ class DoctorForm(forms.ModelForm):
     def clean_password_repeat(self):
         password = self.cleaned_data['password']
         password_repeat = self.cleaned_data['password_repeat']
-        if password != password_repeat:
+        if (password != password_repeat) and (password is not None):
             raise ValidationError("Podane hasła muszą być takie same")
         return password_repeat
 
