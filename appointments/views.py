@@ -132,10 +132,14 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
         d = {"slots": slots_list}
         patient.update(slots=parse_json(d))
 
-    send_emails(patients_emails, specialty, city)
+    subject = "Nowe okienko!"
+    body = f"Pojawiło się nowe okienko dla specjalności %s oraz miasta %s\n\nAby dokonać rezerwacji zaloguj się na " \
+           f"swoje konto http://127.0.0.1:8000/appointments/home/alerts/" % (specialty, city)
+
+    send_email(to_addresses=patients_emails, subject=subject, body=body)
 
 
-def send_emails(patients_emails, medical_specialty, city):
+def send_email(to_addresses, subject, body):
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.ehlo()
     server.starttls()
@@ -148,15 +152,13 @@ def send_emails(patients_emails, medical_specialty, city):
 
     msg = MIMEMultipart()
     msg['From'] = from_address
-    msg['Subject'] = "Nowe okienko!"
-    body = f"Pojawiło się nowe okienko dla specjalności %s oraz miasta %s\n\nAby dokonać rezerwacji zaloguj się na " \
-           f"swoje konto http://127.0.0.1:8000/appointments/login/" % (medical_specialty, city)
+    msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
     text = msg.as_string()
 
-    for patient_email in patients_emails:
-        server.sendmail(from_address, patient_email, text)
+    for to_address in to_addresses:
+        server.sendmail(from_address, to_address, text)
 
     # to_address = "youremailaddress@example.com"
     # server.sendmail(from_address, to_address, text)
@@ -193,26 +195,11 @@ def remove_visit_send_email(visits_data_list):
     time = date_time.time().strftime("%H:%M")
     date = date_time.date().strftime("%d/%m/%Y")
 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.ehlo()
-    server.starttls()
-    server.ehlo()
-    email_address = email.email_address
-    password = email.password
-    server.login(email_address, password)
-
-    from_address = email_address
-
-    msg = MIMEMultipart()
-    msg['From'] = from_address
-    msg['Subject'] = "Odwołanie wizyty"
+    subject = "Odwołanie wizyty"
     body = f"Twoja wizyta w dniu %s o godzinie %s w %s u specjalisty %s została odwołana." \
            % (date, time, address_name, doctor)
-    msg.attach(MIMEText(body, 'plain'))
 
-    text = msg.as_string()
-    print(body)
-    server.sendmail(from_address, patient_email, text)
+    send_email(to_addresses=[patient_email], subject=subject, body=body)
 
 
 def search_visit(request):
