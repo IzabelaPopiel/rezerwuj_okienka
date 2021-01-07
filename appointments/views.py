@@ -4,7 +4,7 @@ from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
 from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, DoctorForm, VisitForm, MedicalSpecialtyForm, \
     AlertForm
-from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
+from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert, Doctor
 from django.contrib import messages
 import json
 import smtplib
@@ -167,11 +167,52 @@ def remove_visit(request, date_time):
     visit = Visit.objects.filter(doctor=doctor_mail, date=date_time)
 
     if request.method == 'POST':
+
+        visits_data = list(visit.all().values().values_list())
+        patient = visits_data[0][4]
+
+        if patient is not None:
+            remove_visit_send_email(visits_data_list=visits_data)
+
         visit.delete()
         return redirect('/appointments/home/')
     else:
 
         return render(request, 'doctor_home.html')
+
+
+def remove_visit_send_email(visits_data_list):
+    date_time = visits_data_list[0][1]
+    doctor_email = visits_data_list[0][2]
+    address_name = visits_data_list[0][3]
+    patient_email = visits_data_list[0][4]
+
+    doctors_data = Doctor.objects.filter(email=doctor_email).all().values().values_list()
+    doctor = doctors_data[0][1] + " " + doctors_data[0][2]
+
+    time = date_time.time().strftime("%H:%M")
+    date = date_time.date().strftime("%d/%m/%Y")
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    email_address = email.email_address
+    password = email.password
+    server.login(email_address, password)
+
+    from_address = email_address
+
+    msg = MIMEMultipart()
+    msg['From'] = from_address
+    msg['Subject'] = "Odwołanie wizyty"
+    body = f"Twoja wizyta w dniu %s o godzinie %s w %s u specjalisty %s została odwołana." \
+           % (date, time, address_name, doctor)
+    msg.attach(MIMEText(body, 'plain'))
+
+    text = msg.as_string()
+    print(body)
+    server.sendmail(from_address, patient_email, text)
 
 
 def search_visit(request):
