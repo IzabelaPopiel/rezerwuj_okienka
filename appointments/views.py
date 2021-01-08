@@ -121,6 +121,9 @@ def get_patient_visits(patient_mail):
 def add_visit(request):
     doctor_mail = request.session.get('email')
     options = []
+    addresses = Address.objects.all().values().values_list()
+    for address in addresses:
+        options.append(address[1])
 
     if request.method == 'POST':
         radio = request.POST['radios']
@@ -142,6 +145,8 @@ def add_visit(request):
             if address_name == '-----':
                 address_name_flag = False
                 messages.warning(request, "Wybierz placówkę")
+            else:
+                address = Address.objects.filter(name=address_name)
     
         if address_name_flag:
             if visit_form.is_valid():
@@ -163,9 +168,6 @@ def add_visit(request):
     else:
         address_form = AddressForm()
         visit_form = VisitForm()
-        addresses = Address.objects.all().values().values_list()
-        for address in addresses:
-            options.append(address[1])
 
     return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form,
                                               'options': options})
