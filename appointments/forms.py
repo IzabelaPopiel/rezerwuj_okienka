@@ -1,15 +1,11 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
-from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty
+from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty, Alert
 
 form_class_style = "form-control"
 form_class_style_radio = "form-check-input position-static"
-OPTIONS = (
-    ("S 1", "S 1"),
-    ("S 2", "S 2"),
-    ("S 3", "S 3"),
-)
+
 USER_TYPES = (
     ("doctor", "Lekarz"),
     ("patient", "Pacjent")
@@ -21,9 +17,62 @@ DATEPICKER = {
 }
 
 
+def get_medical_specialties():
+    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
+    choices = [("", "----------")]
+    for m_specialty in medical_specialty_list:
+        choices.append((m_specialty[1], m_specialty[1]))
+    return choices
+
+
+class AlertForm(forms.ModelForm):
+    specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
+                                  widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
+
+    class Meta:
+        model = Alert
+        fields = '__all__'
+        widgets = {
+            'city':  TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz nazwę miasta..."}),
+        }
+        labels = {
+            'city': 'Miasto'
+        }
+
+    def clean_city(self):
+        city = self.cleaned_data['city']
+        print(city)
+        if not city:
+            raise ValidationError("Należy wpisać nazwę miasta")
+        return city
+
+    def clean_specialty(self):
+        specialty = self.cleaned_data['specialty']
+        print(specialty)
+        if not specialty:
+            raise ValidationError("Należy wybrać specjalizację")
+        return specialty
+
+    def save(self, commit=True):
+        alert = super(AlertForm, self).save(commit=False)
+
+        alert.specialty = self.cleaned_data['specialty']
+        alert.city = self.cleaned_data['city']
+        alert.patient = self.cleaned_data['patient']
+
+        if commit:
+            x = Alert.objects.filter(specialty=alert.specialty, city=alert.city, patient=alert.patient)
+            if x.count():
+                alert = x
+            else:
+                alert.save()
+
+        return alert
+
+
 class MedicalSpecialtyForm(forms.Form):
-    specialty = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(
-        attrs={'class': 'custom-control-checkbox'}), choices=OPTIONS)
+    specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
+                                          widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
 
 
 class LoginForm(forms.ModelForm):
@@ -136,6 +185,7 @@ class PatientForm(forms.ModelForm):
         patient.pesel = self.cleaned_data['pesel']
         patient.email = self.cleaned_data['email']
         patient.password = self.cleaned_data['password']
+        patient.slots = self.cleaned_data['slots']
 
         if commit:
             patient.save()
@@ -171,14 +221,15 @@ class VisitForm(forms.ModelForm):
         visit.doctor = self.cleaned_data['doctor']
         visit.date = self.cleaned_data['date']
 
+        visit_pk = None
+
         if commit:
             x = Visit.objects.filter(doctor=visit.doctor, date=visit.date)
-            if x.count():
-                visit = x
-            else:
+            if not x.count():
                 visit.save()
+                visit_pk = visit.pk
 
-        return visit
+        return visit_pk
 
 
 class AddressForm(forms.ModelForm):
@@ -218,11 +269,6 @@ class AddressForm(forms.ModelForm):
 
 
 class DoctorForm(forms.ModelForm):
-    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
-    choices = [("", "----------")]
-    for m_specialty in medical_specialty_list:
-        choices.append((m_specialty[1], m_specialty[1]))
-
     password = forms.CharField(label="Hasło", max_length=255, min_length=8,
                                help_text="Musi zawierać co najmniej 8 znaków w tym znaki specjalne.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
@@ -232,7 +278,7 @@ class DoctorForm(forms.ModelForm):
                                                                         'placeholder': 'wpisz ponownie hasło...'}),
                                       max_length=255, min_length=8)
 
-    medical_Specialty = forms.ChoiceField(label="Specjalizacja", choices=list(choices),
+    medical_Specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
                                           widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
 
     class Meta:
@@ -289,3 +335,4 @@ class DoctorForm(forms.ModelForm):
             doctor.save()
 
         return doctor
+

@@ -8,7 +8,11 @@
             <a href="/appointments/add_visit" class="btn btn-info btn-sm">Dodaj wizytę</a>
             <form class="d-flex">
                 <a class="navbar-brand">{{ request.session.email }}</a>
-                <button type='submit' class="btn btn-secondary btn-sm">Wyloguj</button>
+                <button type='submit' class="btn btn-secondary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M5.578 4.437a5 5 0 1 0 4.922.044l.5-.866a6 6 0 1 1-5.908-.053l.486.875z"/>
+  <path fill-rule="evenodd" d="M7.5 8V1h1v7h-1z"/>
+</svg>Wyloguj</button>
             </form>
         </div>
     </nav>
@@ -16,10 +20,12 @@
 <br>
 <div class="row justify-content-center">
     <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
+        {% include 'error_message.html' %}
+        {% include 'success_message.html' %}
         <table id="dtVerticalScrollExample" class="table table-striped table-bordered table-sm" cellspacing="0"
                width="100%">
             <thead>
-            <tr>
+            <tr align="center">
                 <th class="th-sm">Imię i Nazwisko pacjenta
                 </th>
                 <th class="th-sm" colspan="3">Adres
@@ -35,12 +41,25 @@
 
             {% for visit in visits %}
             <tr>
-                <td>{{visit.first_name_patient}} {{visit.last_name_patient}}</td>
-                <td>{{visit.clinic_name}}</td>
-                <td>{{visit.address_street}}</td>
-                <td>{{visit.address_city}}</td>
-                <td>{{visit.date}}</td>
-                <td>{{visit.time}}</td>
+                <td align="center">{{visit.first_name_patient}} {{visit.last_name_patient}}</td>
+                <td align="center">{{visit.clinic_name}}</td>
+                <td align="center">{{visit.address_street}}</td>
+                <td align="center">{{visit.address_city}}</td>
+                <td align="center">{{visit.date}}</td>
+                <td align="center">{{visit.time}}</td>
+                <td align="center">
+                    <form action="{% url 'appointments:remove_visit' visit.dateTime %}" method="POST">
+                        {% csrf_token %}
+
+                    <button type="submit" onclick="return confirm('Czy na pewno chcesz usunąć wizytę?');" class="btn btn-info btn-sm" >
+
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+  <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+</svg>
+                        </button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
 
