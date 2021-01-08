@@ -486,11 +486,11 @@ def get_free_visits():
             # date_time = v[1].date().strftime("%Y-%m-%d") + " " + time
             visit_id = v["_id"]
 
-        visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
-                 'last_name_doctor': last_name_doctor,
-                 'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
-                 'time': time, 'date': date, 'visit_id': visit_id}
-        visits.append(visit)
+            visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
+                     'last_name_doctor': last_name_doctor,
+                     'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
+                     'time': time, 'date': date, 'visit_id': visit_id}
+            visits.append(visit)
 
     return visits
 
