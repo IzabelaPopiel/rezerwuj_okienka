@@ -8,6 +8,7 @@ from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from pymongo import MongoClient
+import re
 
 from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, DoctorForm, VisitForm, MedicalSpecialtyForm, \
     AlertForm
@@ -119,33 +120,68 @@ def get_patient_visits(patient_mail):
 
 def add_visit(request):
     doctor_mail = request.session.get('email')
+    options = []
 
     if request.method == 'POST':
+        radio = request.POST['radios']
+        address_name_flag = True
         address_form = AddressForm(request.POST)
         visit_form = VisitForm(request.POST)
 
-        if address_form.is_valid() and visit_form.is_valid():
-            address = address_form.save()
+        if radio == 'enter':
+            if address_form.is_valid():
+                address_name_flag = check_address_form(address_form)
+                if address_name_flag:
+                    address = address_form.save()
+                    address_name = address.all().values().values_list()[0][1]
+                else:
+                    messages.warning(request, "Uzupełnij poprawnie pola adresu")
 
-            address_name = address.all().values().values_list()[0][1]
-
-            visit_form.cleaned_data['address'] = address_name
-            visit_form.cleaned_data['doctor'] = doctor_mail
-            visit_pk = visit_form.save()
-
-            if visit_pk:
-                set_slots_for_patients(visit_pk, doctor_mail, address)
-                messages.success(request, "Utworzono wizytę")
-            else:
-                messages.info(request, "Wizyta o podanych parametrach została już wcześniej utworzona")
-
-            return redirect('/appointments/home/')
         else:
-            print(address_form.errors, visit_form.errors)
+            address_name = request.POST['selectAddress']
+            if address_name == '-----':
+                address_name_flag = False
+                messages.warning(request, "Wybierz placówkę")
+
+        if address_name_flag:
+            if visit_form.is_valid():
+                visit_form.cleaned_data['address'] = address_name
+                visit_form.cleaned_data['doctor'] = doctor_mail
+                visit_form.save()
+
+                messages.success(request, "Dodano wizytę")
+                return redirect('/appointments/home/')
+            else:
+                messages.warning(request, "Wybierz datę i godzinę")
+                print(address_form.errors, visit_form.errors)
+
     else:
         address_form = AddressForm()
         visit_form = VisitForm()
-    return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form})
+        addresses = Address.objects.all().values().values_list()
+        for address in addresses:
+            options.append(address[1])
+
+    return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form,
+                                              'options': options})
+
+
+def check_address_form(address_form: AddressForm):
+    result = True
+    city = address_form.cleaned_data['city']
+    if len(city) == 0 or not city.istitle():
+        result = False
+    postcode = address_form.cleaned_data['postcode']
+    if len(postcode) == 0 or not re.match("^\d\d-\d\d\d$", postcode):
+        result = False
+    street = address_form.cleaned_data['street']
+    if len(street) == 0 or not street.istitle():
+        result = False
+    name = address_form.cleaned_data['name']
+    if len(name) == 0 or not name.istitle():
+        result = False
+
+    return result
 
 
 def set_slots_for_patients(visit_pk, doctor_email, address):
