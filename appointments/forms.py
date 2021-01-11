@@ -33,7 +33,7 @@ class AlertForm(forms.ModelForm):
         model = Alert
         fields = '__all__'
         widgets = {
-            'city':  TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz nazwę miasta..."}),
+            'city': TextInput(attrs={'class': form_class_style, 'placeholder': "wpisz nazwę miasta..."}),
         }
         labels = {
             'city': 'Miasto'
@@ -72,7 +72,7 @@ class AlertForm(forms.ModelForm):
 
 class MedicalSpecialtyForm(forms.Form):
     specialty = forms.ChoiceField(label="Specjalizacja", choices=list(get_medical_specialties()),
-                                          widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
+                                  widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
 
 
 class LoginForm(forms.ModelForm):
@@ -336,3 +336,14 @@ class DoctorForm(forms.ModelForm):
 
         return doctor
 
+
+class SearchVisitForm(forms.Form):
+    specialty = forms.ChoiceField(label="Specjalizacja", required=False, choices=list(get_medical_specialties()),
+                                  widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
+    city = forms.CharField(label="Miasto", required=False, widget=forms.TextInput(attrs={'class': form_class_style,
+                                                                         'placeholder': "wpisz miasto..."}))
+    date = forms.DateTimeField(label="Data i godzina", required=False, input_formats=['%m/%d/%Y %I:%M %p'],
+                               widget=forms.DateTimeInput(attrs={
+                                   'class': 'form-control datetimepicker-input',
+                                   'data-target': '#datetimepicker1'
+                               }))

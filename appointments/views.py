@@ -11,7 +11,7 @@ from pymongo import MongoClient
 import re
 
 from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, DoctorForm, VisitForm, MedicalSpecialtyForm, \
-    AlertForm
+    AlertForm, SearchVisitForm
 from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
 from reservationsystem import config
 
@@ -34,7 +34,8 @@ def register(request):
 
 def login(request):
     if is_already_logged(request):
-        return render(request, redirect_template(request))
+        template_name, context = redirect_template(request)
+        return render(request, template_name, context=context)
     elif request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -121,6 +122,9 @@ def get_patient_visits(patient_mail):
 def add_visit(request):
     doctor_mail = request.session.get('email')
     options = []
+    addresses = Address.objects.all().values().values_list()
+    for address in addresses:
+        options.append(address[1])
 
     if request.method == 'POST':
         radio = request.POST['radios']
@@ -142,15 +146,22 @@ def add_visit(request):
             if address_name == '-----':
                 address_name_flag = False
                 messages.warning(request, "Wybierz placówkę")
+            else:
+                address = Address.objects.filter(name=address_name)
 
         if address_name_flag:
             if visit_form.is_valid():
                 visit_form.cleaned_data['address'] = address_name
                 visit_form.cleaned_data['doctor'] = doctor_mail
-                visit_form.save()
+                visit_pk = visit_form.save()
 
-                messages.success(request, "Dodano wizytę")
+                if visit_pk:
+                    set_slots_for_patients(visit_pk, doctor_mail, address)
+                    messages.success(request, "Utworzono nową wizytę")
+                else:
+                    messages.info(request, "Wizyta o podanych parametrach została wcześniej utworzona")
                 return redirect('/appointments/home/')
+
             else:
                 messages.warning(request, "Wybierz datę i godzinę")
                 print(address_form.errors, visit_form.errors)
@@ -158,9 +169,6 @@ def add_visit(request):
     else:
         address_form = AddressForm()
         visit_form = VisitForm()
-        addresses = Address.objects.all().values().values_list()
-        for address in addresses:
-            options.append(address[1])
 
     return render(request, 'add_visit.html', {'address_form': address_form, 'visit_form': visit_form,
                                               'options': options})
@@ -251,13 +259,18 @@ def remove_visit(request, date_time):
 
 
 def search_visit(request):
-    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
-    select = ["Wybierz..."]
-    for m_specialty in medical_specialty_list:
-        select.append(m_specialty[1])
-    visits = get_free_visits()
 
-    context = {'visits': visits, 'specialties': select}
+    if request.method == "POST":
+        search_form = SearchVisitForm(request.POST)
+        city = search_form.data['city']
+        specialty = search_form.data['specialty']
+        date = search_form.data['date']
+        visits = get_free_visits(city, specialty, date)
+    else:
+        visits = get_free_visits(specialty=None, city=None, date=None)
+
+    form = SearchVisitForm()
+    context = {'visits': visits, 'search_visit_page': 'active', 'form': form}
     template_name = 'search_visit.html'
     return render(request, template_name, context)
 
@@ -450,18 +463,7 @@ def accept_slot(request, visit_id):
         return render(request, 'patient_alerts.html')
 
 
-def search_visit(request):
-    medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
-    select = ["Wybierz..."]
-    for m_specialty in medical_specialty_list:
-        select.append(m_specialty[1])
-    visits = get_free_visits()
-    context = {'search_visit_page': 'active', 'visits': visits, 'specialties': select}
-    template_name = 'search_visit.html'
-    return render(request, template_name, context)
-
-
-def get_free_visits():
+def get_free_visits(city, specialty, date):
     visits = []
     visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
     matching_visit = visit_collection.find({'patient': None})
@@ -480,17 +482,33 @@ def get_free_visits():
             clinic_name = v['address']
             address = Address.objects.filter(name=clinic_name).all().values().values_list()
             address_street = f"ul. %s" % (address[0][2])
-            address_city = f"%s %s" % (address[0][4], address[0][3])
-            time = v['date'].time().strftime("%H:%M")
-            date = v['date'].date().strftime("%d/%m/%Y")
-            # date_time = v[1].date().strftime("%Y-%m-%d") + " " + time
+            address_city = address[0][3]
+            address_code_city = f"%s %s" % (address[0][4], address_city)
+            v_time = v['date'].time().strftime("%H:%M")
+            v_date = v['date'].date().strftime("%d/%m/%Y")
             visit_id = v["_id"]
 
             visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
                      'last_name_doctor': last_name_doctor,
-                     'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_city,
-                     'time': time, 'date': date, 'visit_id': visit_id}
-            visits.append(visit)
+                     'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_code_city,
+                     'time': v_time, 'date': v_date, 'visit_id': visit_id}
+
+            flag = True
+
+            if date is not None and date != "":
+                date = date[0:10]
+                v_date = v['date'].date().strftime("%m/%d/%Y")
+                if v_date != date:
+                    flag = False
+            if city is not None and city != "":
+                if address_city != city:
+                    flag = False
+            if specialty is not None and specialty != "":
+                if specialty != medical_specialty:
+                    flag = False
+
+            if flag:
+                visits.append(visit)
 
     return visits
 
