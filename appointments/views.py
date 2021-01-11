@@ -12,7 +12,13 @@ import re
 
 from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, DoctorForm, VisitForm, MedicalSpecialtyForm, \
     AlertForm, SearchVisitForm
-from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert
+from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert, Doctor
+from django.contrib import messages
+import json
+import smtplib
+from reservationsystem import email
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from reservationsystem import config
 
 
@@ -214,8 +220,11 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
         d = {"slots": slots_list}
         patient.update(slots=parse_json(d))
 
-    # here will be send emails
+    subject = "Nowe okienko!"
+    body = f"Pojawiło się nowe okienko dla specjalności %s oraz miasta %s\n\nAby dokonać rezerwacji zaloguj się na " \
+           f"swoje konto http://127.0.0.1:8000/appointments/home/alerts/" % (specialty, city)
 
+    send_email(to_addresses=patients_emails, subject=subject, body=body)
 
 def remove_slots_help(visit_id):
     booked = False
@@ -234,6 +243,32 @@ def remove_slots_help(visit_id):
             except ValueError:
                 print("ValueError")
     return booked
+
+
+
+def send_email(to_addresses, subject, body):
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    email_address = email.email_address
+    password = email.password
+    server.login(email_address, password)
+
+    from_address = email_address
+
+    msg = MIMEMultipart()
+    msg['From'] = from_address
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    text = msg.as_string()
+
+    for to_address in to_addresses:
+        server.sendmail(from_address, to_address, text)
+
+    # to_address = "youremailaddress@example.com"
+    # server.sendmail(from_address, to_address, text)
 
 
 def remove_visit(request, date_time):
@@ -256,6 +291,25 @@ def remove_visit(request, date_time):
     else:
 
         return render(request, 'doctor_home.html')
+
+
+def remove_visit_send_email(visits_data_list):
+    date_time = visits_data_list[0][1]
+    doctor_email = visits_data_list[0][2]
+    address_name = visits_data_list[0][3]
+    patient_email = visits_data_list[0][4]
+
+    doctors_data = Doctor.objects.filter(email=doctor_email).all().values().values_list()
+    doctor = doctors_data[0][1] + " " + doctors_data[0][2]
+
+    time = date_time.time().strftime("%H:%M")
+    date = date_time.date().strftime("%d/%m/%Y")
+
+    subject = "Odwołanie wizyty"
+    body = f"Twoja wizyta w dniu %s o godzinie %s w %s u specjalisty %s została odwołana." \
+           % (date, time, address_name, doctor)
+
+    send_email(to_addresses=[patient_email], subject=subject, body=body)
 
 
 def search_visit(request):
@@ -410,6 +464,9 @@ def remove_alert(request, specialty, city):
         return render(request, 'patient_alerts.html')
 
 
+    return render(request, template_name, context)
+    
+    
 def remove_slot(request, visit_id):
     patient_mail = request.session.get('email')
     patient = Patient.objects.filter(email=patient_mail)
