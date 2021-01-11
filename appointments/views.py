@@ -34,7 +34,8 @@ def register(request):
 
 def login(request):
     if is_already_logged(request):
-        return render(request, redirect_template(request))
+        template_name, context = redirect_template(request)
+        return render(request, template_name, context=context)
     elif request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
