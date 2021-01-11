@@ -214,10 +214,13 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
 
         patient = Patient.objects.filter(email=p_email)
         slots_json = patient.values().values_list()[0][6]
-        slots = slots_json['slots']
-        slots_list = list(slots)
-        slots_list.append(visit_pk)
-        d = {"slots": slots_list}
+        if 'slots' in slots_json:
+            slots = slots_json['slots']
+            slots_list = list(slots)
+            slots_list.append(visit_pk)
+            d = {"slots": slots_list}
+        else:
+            d = {"slots": [visit_pk]}
         patient.update(slots=parse_json(d))
 
     subject = "Nowe okienko!"
@@ -225,6 +228,7 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
            f"swoje konto http://127.0.0.1:8000/appointments/home/alerts/" % (specialty, city)
 
     send_email(to_addresses=patients_emails, subject=subject, body=body)
+
 
 def remove_slots_help(visit_id):
     booked = False
@@ -245,7 +249,6 @@ def remove_slots_help(visit_id):
     return booked
 
 
-
 def send_email(to_addresses, subject, body):
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.ehlo()
@@ -264,8 +267,8 @@ def send_email(to_addresses, subject, body):
 
     text = msg.as_string()
 
-    for to_address in to_addresses:
-        server.sendmail(from_address, to_address, text)
+    # for to_address in to_addresses:
+    #     server.sendmail(from_address, to_address, text)
 
     # to_address = "youremailaddress@example.com"
     # server.sendmail(from_address, to_address, text)
@@ -313,7 +316,6 @@ def remove_visit_send_email(visits_data_list):
 
 
 def search_visit(request):
-
     if request.method == "POST":
         search_form = SearchVisitForm(request.POST)
         city = search_form.data['city']
@@ -417,33 +419,38 @@ def patient_alerts(request):
         contacts = paginator.page(paginator.num_pages)
 
     patient_slots_str = getattr(Patient.objects.filter(email=patient_mail).first(), 'slots')
-    patient_slots = parse_json(patient_slots_str)["slots"]
+    try:
+        patient_slots = parse_json(patient_slots_str)["slots"]
 
-    visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-    cards_text = []
+        visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
+        cards_text = []
 
-    for slot in patient_slots:
-        visit_id = slot['$oid']
-        matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
-        if matching_visit:
-            date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
-                "date"].time().strftime("%H:%M")
-            doctor = Doctor.objects.filter(email=matching_visit["doctor"]).first()
-            doc_first_name = getattr(doctor, 'first_name')
-            doc_last_name = getattr(doctor, 'last_name')
-            doc_name = doc_first_name + " " + doc_last_name
-            specialty = getattr(doctor, 'medical_Specialty')
-            clinic_address = Address.objects.filter(name=matching_visit["address"]).first()
-            full_address = matching_visit["address"] + " ul. " + getattr(clinic_address, 'street') + ", " + getattr(
-                clinic_address, 'city')
+        for slot in patient_slots:
+            visit_id = slot['$oid']
+            matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
+            if matching_visit:
+                date_format = matching_visit["date"].date().strftime("%Y-%m-%d") + " godz. " + matching_visit[
+                    "date"].time().strftime("%H:%M")
+                doctor = Doctor.objects.filter(email=matching_visit["doctor"]).first()
+                doc_first_name = getattr(doctor, 'first_name')
+                doc_last_name = getattr(doctor, 'last_name')
+                doc_name = doc_first_name + " " + doc_last_name
+                specialty = getattr(doctor, 'medical_Specialty')
+                clinic_address = Address.objects.filter(name=matching_visit["address"]).first()
+                full_address = matching_visit["address"] + " ul. " + getattr(clinic_address, 'street') + ", " + getattr(
+                    clinic_address, 'city')
 
-            cards_text.append(
-                {'specialty': specialty, 'doctor': doc_name, 'datatime': date_format,
-                 'address': full_address, 'visit_id': visit_id})
+                cards_text.append(
+                    {'specialty': specialty, 'doctor': doc_name, 'datatime': date_format,
+                     'address': full_address, 'visit_id': visit_id})
 
-    context = {'alert_page': 'active', 'alert_form': alert_form,
-               'medical_specialties_form': medical_specialties_form,
-               'patient_alerts': contacts, 'cards': cards_text, }
+        context = {'alert_page': 'active', 'alert_form': alert_form,
+                   'medical_specialties_form': medical_specialties_form,
+                   'patient_alerts': contacts, 'cards': cards_text, }
+    except KeyError:
+        context = {'alert_page': 'active', 'alert_form': alert_form,
+                   'medical_specialties_form': medical_specialties_form,
+                   'patient_alerts': contacts, 'cards': [], }
 
     return render(request, 'patient_alerts.html', context=context)
 
@@ -463,10 +470,9 @@ def remove_alert(request, specialty, city):
 
         return render(request, 'patient_alerts.html')
 
-
     return render(request, template_name, context)
-    
-    
+
+
 def remove_slot(request, visit_id):
     patient_mail = request.session.get('email')
     patient = Patient.objects.filter(email=patient_mail)

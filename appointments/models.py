@@ -26,7 +26,7 @@ class Patient(models.Model):
     pesel = models.CharField(max_length=11, validators=[RegexValidator(r'^\d{11,11}$')])
     email = models.EmailField(max_length=255)
     password = models.CharField(max_length=255)
-    slots = models.JSONField(default=dict)
+    slots = models.JSONField(default=dict, null=True, blank=True)
 
 
 class Address(models.Model):
