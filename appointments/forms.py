@@ -21,7 +21,7 @@ DATEPICKER = {
 password_validator = RegexValidator(
     regex="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{8,}$",
     message=
-    "Hasło musi zawierać przynjamniej jedną dużą literę, małą literę i znak specjalny")
+    "Hasło musi zawierać przynjamniej jedną dużą literę, małą literę, cyfrę i znak specjalny")
 
 def get_medical_specialties():
     medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
@@ -125,7 +125,7 @@ class LoginForm(forms.ModelForm):
 
 class PatientForm(forms.ModelForm):
     password = forms.CharField(label="Hasło", max_length=255, min_length=8, validators=[password_validator],
-                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę i znak specjalny bez polskich liter.",
+                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę, cyfrę i znak specjalny bez polskich liter.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
                                                                  'placeholder': "wpisz hasło..."}))
     password_repeat = forms.CharField(label="Potwierdzenie hasła",
@@ -284,7 +284,7 @@ class AddressForm(forms.ModelForm):
 
 class DoctorForm(forms.ModelForm):
     password = forms.CharField(label="Hasło", max_length=255, min_length=8, validators=[password_validator],
-                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę i znak specjalny bez polskich liter.",
+                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę, cyfrę i znak specjalny bez polskich liter.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
                                                                  'placeholder': "wpisz hasło..."}))
     password_repeat = forms.CharField(label="Potwierdzenie hasła",
