@@ -140,12 +140,12 @@ def add_visit(request):
 
         if radio == 'enter':
             if address_form.is_valid():
-                address_name_flag = check_address_form(address_form)
+                address_name_flag, message = check_address_form(address_form)
                 if address_name_flag:
                     address = address_form.save()
                     address_name = address.all().values().values_list()[0][1]
                 else:
-                    messages.warning(request, "Uzupełnij poprawnie pola adresu")
+                    messages.warning(request, message)
 
         else:
             address_name = request.POST['selectAddress']
@@ -182,20 +182,21 @@ def add_visit(request):
 
 def check_address_form(address_form: AddressForm):
     result = True
+    message = ""
     city = address_form.cleaned_data['city']
     if len(city) == 0 or not city.istitle():
-        result = False
-    postcode = address_form.cleaned_data['postcode']
-    if len(postcode) == 0 or not re.match("^\d\d-\d\d\d$", postcode):
+        message += "Nazwa miasta powinna zaczynać się wielką literą. "
         result = False
     street = address_form.cleaned_data['street']
-    if len(street) == 0 or not street.istitle():
+    if len(street) == 0 or not street[0].isupper():
+        message += "Nazwa ulicy powinna zaczynać się wielką literą. "
         result = False
     name = address_form.cleaned_data['name']
-    if len(name) == 0 or not name.istitle():
+    if len(name) == 0:
+        message += "Uzupełnij nazwę placówki. "
         result = False
 
-    return result
+    return result, message
 
 
 def set_slots_for_patients(visit_pk, doctor_email, address):
@@ -223,15 +224,14 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
             d = {"slots": [visit_pk]}
         patient.update(slots=parse_json(d))
 
-    subject = "Nowe okienko!"
-    body = f"Pojawiło się nowe okienko dla specjalności %s oraz miasta %s\n\nAby dokonać rezerwacji zaloguj się na " \
+    subject = "nowe okienko - rezerwuj okienka"
+    body = f"Nowe okienko dla specjalności %s oraz miasta %s\n\nJeśli chcesz zarezerwować tę wizytę zaloguj się na " \
            f"swoje konto http://127.0.0.1:8000/appointments/home/alerts/" % (specialty, city)
 
     send_email(to_addresses=patients_emails, subject=subject, body=body)
 
 
 def remove_slots_help(visit_id):
-    booked = False
     patient_collection = Patient.objects.all().values('email')
     for p in patient_collection:
 
@@ -242,11 +242,9 @@ def remove_slots_help(visit_id):
             patient_slots = parse_json(patient_slots_str)["slots"]
             try:
                 patient_slots.remove({'$oid': str(visit_id)})
-                if patient.update(slots=parse_json({"slots": patient_slots})):
-                    booked = True
-            except ValueError:
-                print("ValueError")
-    return booked
+                patient.update(slots=parse_json({"slots": patient_slots}))
+            except ValueError as error:
+                print(error)
 
 
 def send_email(to_addresses, subject, body):
@@ -276,23 +274,29 @@ def send_email(to_addresses, subject, body):
 
 def remove_visit(request, date_time):
     doctor_mail = request.session.get('email')
-    visit = Visit.objects.get(doctor=doctor_mail, date=date_time)
+    visit = Visit.objects.filter(doctor=doctor_mail, date=date_time)
 
     if request.method == 'POST':
-        visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-        matching_visit = visit_collection.find_one({'doctor': doctor_mail, 'date': visit.date})
-        visit_id = matching_visit["_id"]
-        booked = remove_slots_help(visit_id)
+        visits_data = list(visit.all().values().values_list())
 
-        if booked:
+        visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
+        matching_visit = visit_collection.find_one({'doctor': doctor_mail, 'date': visits_data[0][1]})
+        visit_id = matching_visit["_id"]
+
+        result = visit_collection.remove(matching_visit)
+        if result:
+            remove_slots_help(visit_id)
+            patient = visits_data[0][4]
+
+            if patient is not None:
+                remove_visit_send_email(visits_data_list=visits_data)
+
             messages.success(request, "Pomyślnie usunięto wizytę")
         else:
-            messages.error(request, "Wystąpił błąd, spróbuj ponownie")
+            messages.error(request, "Wizyta nie zostałą usunięta")
 
-        visit_collection.remove(matching_visit)
         return redirect('/appointments/home/')
     else:
-
         return render(request, 'doctor_home.html')
 
 
@@ -497,8 +501,12 @@ def book_visit(request, visit_id):
     patient_mail = request.session.get('email')
     if request.method == 'POST':
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-        visit_collection.update_one({'_id': ObjectId(visit_id)}, {"$set": {"patient": patient_mail}})
-        remove_slots_help(visit_id)
+        result = visit_collection.update_one({'_id': ObjectId(visit_id), 'patient': None}, {"$set": {"patient": patient_mail}})
+        if result.matched_count == 0:
+            messages.warning(request, "Wizyta nie jest już dostępna")
+        else:
+            remove_slots_help(visit_id)
+            messages.success(request, "Zarezerwowano wizytę")
         return redirect('/appointments/home/search_visit')
     else:
         return render(request, 'search_visit.html')
@@ -509,21 +517,16 @@ def accept_slot(request, visit_id):
 
     if request.method == 'POST':
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-        matching_visit = visit_collection.find_one({'_id': ObjectId(visit_id)})
-
-        if matching_visit['patient'] == None:
-            visit_collection.update_one({'_id': ObjectId(visit_id)}, {"$set": {"patient": patient_mail}})
-            booked = remove_slots_help(visit_id)
-
-        if booked:
-            messages.success(request, "Pomyślnie zarezerwowano okienko")
+        result = visit_collection.update_one({'_id': ObjectId(visit_id), 'patient': None},
+                                                     {"$set": {"patient": patient_mail}})
+        if result.matched_count == 0:
+            messages.warning(request, "Wizyta nie jest już dostępna")
         else:
-            messages.error(request, "Wystąpił błąd, spróbuj ponownie")
-
+            remove_slots_help(visit_id)
+            messages.success(request, "Zarezerwowano wizytę")
         return redirect('/appointments/home/alerts/')
-    else:
 
-        return render(request, 'patient_alerts.html')
+    return render(request, 'patient_alerts.html')
 
 
 def get_free_visits(city, specialty, date):

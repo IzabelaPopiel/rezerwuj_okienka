@@ -23,6 +23,10 @@ password_validator = RegexValidator(
     message=
     "Hasło musi zawierać przynjamniej jedną dużą literę, małą literę, cyfrę i znak specjalny")
 
+# pesel_validator = RegexValidator(
+#     regex="^\d{11,11}$",
+#     message="Pesel musi mieć 11 znaków")
+
 def get_medical_specialties():
     medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
     choices = [("", "----------")]
@@ -153,6 +157,7 @@ class PatientForm(forms.ModelForm):
             'pesel': "Nie udostępnimy nikomu z zewnętrz twojego numeru PESEL. Twoje dane są bezpieczne."
         }
 
+
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         print(email)
@@ -199,6 +204,7 @@ class PatientForm(forms.ModelForm):
         patient.last_name = self.cleaned_data['last_name']
         patient.pesel = self.cleaned_data['pesel']
         patient.email = self.cleaned_data['email']
+        patient.slots = self.cleaned_data['slots']
         patient.password = bcrypt.hashpw(self.cleaned_data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         if commit:

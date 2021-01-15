@@ -2,6 +2,11 @@ from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
 
 
+pesel_validator = RegexValidator(
+    regex="^\d{11,11}$",
+    message="Pesel musi mieć 11 znaków")
+
+
 class Alert(models.Model):
     specialty = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
@@ -23,7 +28,7 @@ class Doctor(models.Model):
 class Patient(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    pesel = models.CharField(max_length=11, validators=[RegexValidator(r'^\d{11,11}$')])
+    pesel = models.CharField(max_length=11, validators=[pesel_validator])
     email = models.EmailField(max_length=255)
     password = models.CharField(max_length=255)
     slots = models.JSONField(default=dict, null=True, blank=True)
