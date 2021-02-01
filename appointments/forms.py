@@ -2,7 +2,7 @@ import bcrypt
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.forms import TextInput, NumberInput, EmailInput, ChoiceField, RadioSelect, DateTimeInput
+from django.forms import TextInput, NumberInput, EmailInput
 from appointments.models import Patient, Doctor, Visit, Address, MedicalSpecialty, Alert
 
 form_class_style = "form-control"
@@ -21,7 +21,8 @@ DATEPICKER = {
 password_validator = RegexValidator(
     regex="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{8,}$",
     message=
-    "Hasło musi zawierać przynjamniej jedną dużą literę, małą literę i znak specjalny")
+    "Hasło musi zawierać przynjamniej jedną dużą literę, małą literę, cyfrę i znak specjalny")
+
 
 def get_medical_specialties():
     medical_specialty_list = MedicalSpecialty.objects.all().values().values_list()
@@ -47,14 +48,12 @@ class AlertForm(forms.ModelForm):
 
     def clean_city(self):
         city = self.cleaned_data['city']
-        print(city)
         if not city:
             raise ValidationError("Należy wpisać nazwę miasta")
         return city
 
     def clean_specialty(self):
         specialty = self.cleaned_data['specialty']
-        print(specialty)
         if not specialty:
             raise ValidationError("Należy wybrać specjalizację")
         return specialty
@@ -69,7 +68,7 @@ class AlertForm(forms.ModelForm):
         if commit:
             x = Alert.objects.filter(specialty=alert.specialty, city=alert.city, patient=alert.patient)
             if x.count():
-                alert = x
+                alert = None
             else:
                 alert.save()
 
@@ -125,7 +124,7 @@ class LoginForm(forms.ModelForm):
 
 class PatientForm(forms.ModelForm):
     password = forms.CharField(label="Hasło", max_length=255, min_length=8, validators=[password_validator],
-                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę i znak specjalny bez polskich liter.",
+                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę, cyfrę i znak specjalny bez polskich liter.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
                                                                  'placeholder': "wpisz hasło..."}))
     password_repeat = forms.CharField(label="Potwierdzenie hasła",
@@ -155,7 +154,6 @@ class PatientForm(forms.ModelForm):
 
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
-        print(email)
         r = Patient.objects.filter(email=email)
         if r.count():
             raise ValidationError("Adres email jest już zajęty")
@@ -163,21 +161,18 @@ class PatientForm(forms.ModelForm):
 
     def clean_first_name(self):
         first_name = self.cleaned_data['first_name']
-        print(first_name)
         if not first_name.istitle():
             raise ValidationError("Imię musi rozpoczynać się wielką literą")
         return first_name
 
     def clean_last_name(self):
         last_name = self.cleaned_data['last_name']
-        print(last_name)
         if not last_name.istitle():
             raise ValidationError("Nazwisko musi rozpoczynać się wielką literą")
         return last_name
 
     def clean_pesel(self):
         pesel = self.cleaned_data['pesel']
-        print(pesel)
         r = Patient.objects.filter(pesel=pesel)
         if r.count():
             raise ValidationError("PESEL jest już zajęty")
@@ -186,8 +181,6 @@ class PatientForm(forms.ModelForm):
     def clean_password_repeat(self):
         password = self.cleaned_data.get('password')
         password_repeat = self.cleaned_data.get('password_repeat')
-        print(password)
-        print(password_repeat)
         if (password != password_repeat) and (password is not None):
             raise ValidationError("Hasła nie są identyczne")
         return password_repeat
@@ -199,7 +192,9 @@ class PatientForm(forms.ModelForm):
         patient.last_name = self.cleaned_data['last_name']
         patient.pesel = self.cleaned_data['pesel']
         patient.email = self.cleaned_data['email']
-        patient.password = bcrypt.hashpw(self.cleaned_data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        patient.slots = self.cleaned_data['slots']
+        patient.password = bcrypt.hashpw(self.cleaned_data['password'].encode('utf-8'), bcrypt.gensalt()).decode(
+            'utf-8')
 
         if commit:
             patient.save()
@@ -284,7 +279,7 @@ class AddressForm(forms.ModelForm):
 
 class DoctorForm(forms.ModelForm):
     password = forms.CharField(label="Hasło", max_length=255, min_length=8, validators=[password_validator],
-                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę i znak specjalny bez polskich liter.",
+                               help_text="Musi zawierać co najmniej 8 znaków, dużą, małą literę, cyfrę i znak specjalny bez polskich liter.",
                                widget=forms.PasswordInput(attrs={'class': form_class_style,
                                                                  'placeholder': "wpisz hasło..."}))
     password_repeat = forms.CharField(label="Potwierdzenie hasła",
@@ -310,8 +305,8 @@ class DoctorForm(forms.ModelForm):
         }
 
     def clean_password_repeat(self):
-        password = self.cleaned_data['password']
-        password_repeat = self.cleaned_data['password_repeat']
+        password = self.cleaned_data.get('password')
+        password_repeat = self.cleaned_data.get('password_repeat')
         if (password != password_repeat) and (password is not None):
             raise ValidationError("Podane hasła muszą być takie same")
         return password_repeat
@@ -325,14 +320,12 @@ class DoctorForm(forms.ModelForm):
 
     def clean_first_name(self):
         first_name = self.cleaned_data['first_name']
-        print(first_name)
         if not first_name.istitle():
             raise ValidationError("Imię musi rozpoczynać się wielką literą")
         return first_name
 
     def clean_last_name(self):
         last_name = self.cleaned_data['last_name']
-        print(last_name)
         if not last_name.istitle():
             raise ValidationError("Nazwisko musi rozpoczynać się wielką literą")
         return last_name
@@ -355,7 +348,7 @@ class SearchVisitForm(forms.Form):
     specialty = forms.ChoiceField(label="Specjalizacja", required=False, choices=list(get_medical_specialties()),
                                   widget=forms.Select(attrs={'class': form_class_style + " form-select"}))
     city = forms.CharField(label="Miasto", required=False, widget=forms.TextInput(attrs={'class': form_class_style,
-                                                                         'placeholder': "wpisz miasto..."}))
+                                                                                         'placeholder': "wpisz miasto..."}))
     date = forms.DateTimeField(label="Data i godzina", required=False, input_formats=['%m/%d/%Y %I:%M %p'],
                                widget=forms.DateTimeInput(attrs={
                                    'class': 'form-control datetimepicker-input',
