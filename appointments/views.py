@@ -1,5 +1,8 @@
 import json
+import smtplib
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from bson import json_util, ObjectId
 from django.contrib import messages
@@ -8,18 +11,12 @@ from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from pymongo import MongoClient
-import re
 
-from appointments.forms import PatientForm, LoginForm, AddressForm, Doctor, DoctorForm, VisitForm, MedicalSpecialtyForm, \
+from appointments.forms import PatientForm, LoginForm, AddressForm, DoctorForm, VisitForm, MedicalSpecialtyForm, \
     AlertForm, SearchVisitForm
-from appointments.models import Visit, Address, Patient, MedicalSpecialty, Alert, Doctor
-from django.contrib import messages
-import json
-import smtplib
-from reservationsystem import email
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from appointments.models import Visit, Address, Patient, Alert, Doctor
 from reservationsystem import config
+from reservationsystem import email
 
 
 def register(request):
@@ -31,8 +28,6 @@ def register(request):
             form.cleaned_data['slots'] = {'slots': []}
             form.save()
             return redirect('/appointments/home/')
-        else:
-            print(form.errors)
     else:
         form = PatientForm()
     return render(request, 'register.html', {'form': form})
@@ -48,16 +43,12 @@ def login(request):
             request.session['email'] = form.data['email']
             request.session['user_type'] = form.data['user_type']
             return redirect('/appointments/home/')
-        else:
-            print(form.errors)
     else:
-        print('anyway')
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
 
 def logout(request):
-    print('logout')
     if request.method == 'GET':
         request.session.flush()
     form = LoginForm()
@@ -113,7 +104,6 @@ def get_patient_visits(patient_mail):
             address_city = f"%s %s" % (address[0][4], address[0][3])
             time = v['date'].time().strftime("%H:%M")
             date = v['date'].date().strftime("%d/%m/%Y")
-            # date_time = v[1].date().strftime("%Y-%m-%d") + " " + time
             visit_id = v["_id"]
 
             visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
@@ -170,7 +160,6 @@ def add_visit(request):
 
             else:
                 messages.warning(request, "Wybierz datę i godzinę")
-                print(address_form.errors, visit_form.errors)
 
     else:
         address_form = AddressForm()
@@ -244,7 +233,7 @@ def remove_slots_help(visit_id):
                 patient_slots.remove({'$oid': str(visit_id)})
                 patient.update(slots=parse_json({"slots": patient_slots}))
             except ValueError as error:
-                print(error)
+                pass
 
 
 def send_email(to_addresses, subject, body):
@@ -267,9 +256,6 @@ def send_email(to_addresses, subject, body):
 
     for to_address in to_addresses:
         server.sendmail(from_address, to_address, text)
-
-    # to_address = "youremailaddress@example.com"
-    # server.sendmail(from_address, to_address, text)
 
 
 def remove_visit(request, date_time):
@@ -343,8 +329,6 @@ def add_doctor(request):
             form.save()
             messages.success(request,
                              'Lekarz ' + form.data['first_name'] + ' ' + form.data['last_name'] + ' dodany prawidłowo')
-        else:
-            print(form.errors)
     else:
         form = DoctorForm()
 
@@ -402,9 +386,6 @@ def patient_alerts(request):
             else:
                 messages.warning(request, "Alert dla specjalizacji: %s oraz miasta: %s został już wcześniej ustawiony"
                                  % (specialty, city))
-
-        else:
-            print(alert_form.errors)
 
     list_patient_alerts = Alert.objects.filter(patient=patient_mail)
     list_alerts = list(list_patient_alerts.all().values().values_list())
@@ -504,7 +485,8 @@ def book_visit(request, visit_id):
     patient_mail = request.session.get('email')
     if request.method == 'POST':
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-        result = visit_collection.update_one({'_id': ObjectId(visit_id), 'patient': None}, {"$set": {"patient": patient_mail}})
+        result = visit_collection.update_one({'_id': ObjectId(visit_id), 'patient': None},
+                                             {"$set": {"patient": patient_mail}})
         if result.matched_count == 0:
             messages.warning(request, "Wizyta nie jest już dostępna")
         else:
@@ -521,7 +503,7 @@ def accept_slot(request, visit_id):
     if request.method == 'POST':
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
         result = visit_collection.update_one({'_id': ObjectId(visit_id), 'patient': None},
-                                                     {"$set": {"patient": patient_mail}})
+                                             {"$set": {"patient": patient_mail}})
         if result.matched_count == 0:
             messages.warning(request, "Wizyta nie jest już dostępna")
         else:

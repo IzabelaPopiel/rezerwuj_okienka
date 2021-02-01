@@ -1,6 +1,5 @@
-from django.core.validators import MaxValueValidator, RegexValidator
+from django.core.validators import RegexValidator
 from django.db import models
-
 
 pesel_validator = RegexValidator(
     regex="^\d{11,11}$",
@@ -43,6 +42,6 @@ class Address(models.Model):
 
 class Visit(models.Model):
     date = models.DateTimeField()
-    doctor = models.CharField(max_length=255, blank=True, null=True) # email doctor
-    address = models.CharField(max_length=255, blank=True, null=True) # address name
-    patient = models.CharField(max_length=255, blank=True, null=True) # email patient
+    doctor = models.CharField(max_length=255, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    patient = models.CharField(max_length=255, blank=True, null=True)
