@@ -224,9 +224,9 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
             d = {"slots": [visit_pk]}
         patient.update(slots=parse_json(d))
 
-    subject = "nowe okienko - rezerwuj okienka"
-    body = f"Nowe okienko dla specjalności %s oraz miasta %s\n\nJeśli chcesz zarezerwować tę wizytę zaloguj się na " \
-           f"swoje konto http://127.0.0.1:8000/appointments/home/alerts/" % (specialty, city)
+    subject = "Nowe okienko!"
+    body = f"Nowe okienko dla specjalności %s oraz miasta %s. Zaloguj się na swoje konto, żeby zarezerwować wizytę." \
+           f"\n\nZespół Rezerwuj Okienka" % (specialty, city)
 
     send_email(to_addresses=patients_emails, subject=subject, body=body)
 
@@ -265,8 +265,8 @@ def send_email(to_addresses, subject, body):
 
     text = msg.as_string()
 
-    # for to_address in to_addresses:
-    #     server.sendmail(from_address, to_address, text)
+    for to_address in to_addresses:
+        server.sendmail(from_address, to_address, text)
 
     # to_address = "youremailaddress@example.com"
     # server.sendmail(from_address, to_address, text)
