@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'patient_navbar.html' %}
+<br>
+<div class="row justify-content-center">
+    <div class="col-md-offset-2 col-md-8 col-md-offset-2 align-self-md-center">
+
+        {% include 'error_message.html' %}
+        {% include 'message.html' %}
+
+        <form action="/appointments/home/alerts/" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-5">
+                    <h4>Specjalizacja</h4>
+                </div>
+                <div class="col-7">
+                    <h4>Miasto</h4>
+                </div>
+            </div>
+            <div class="row">
+                {% for field in alert_form %}
+                {% if field.name == 'city' or field.name == 'specialty' %}
+                <div class="col-5">
+                    {{ field }}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                <div class="col-2">
+                    <button type="submit" class="btn btn-dark btn-alerts">Ustaw alert</button>
+                </div>
+            </div>
+        </form>
+
+        <br><br>
+
+        <div class="row justify-content-center">
+            <div class="col">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Specjalizacja</th>
+                        <th scope="col">Miasto</th>
+                        <th scope="col"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for alert in patient_alerts %}
+                    <tr>
+                        <th scope="row">{{alert.number}}</th>
+                        <td>{{alert.specialty}}</td>
+                        <td>{{alert.city}}
+
+                        <td colspan="1">
+                            <span class="table-remove">
+
+                            <form action="{% url 'appointments:remove_alert' alert.specialty  alert.city%}"
+                                  method="POST">
+                                    {% csrf_token %}
+
+                            <button onclick="return confirm('Czy na pewno chcesz usunąć alert?');" class="btn btn-sm"
+                                    type="submit" data-toggle="tooltip"
+                                    data-placement="left" title="Usuń ustawiony alert">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     class="bi bi-trash" viewBox="0 0 16 16">
+                                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                  <path fill-rule="evenodd"
+                                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                            </button>
+    </form>
+
+                            </span>
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if patient_alerts.has_other_pages %}
+
+        <ul class="pagination justify-content-center">
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    {% if patient_alerts.has_previous %}
+                    <li><a href="?page={{ patient_alerts.previous_page_number }}">&laquo;</a></li>
+                    {% else %}
+                    <li class="disabled"><span>&laquo;</span></li>
+                    {% endif %}
+                    {% for i in patient_alerts.paginator.page_range %}
+                    {% if patient_alerts.number == i %}
+                    <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                    {% else %}
+                    <li><a href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    {% if patient_alerts.has_next %}
+                    <li><a href="?page={{ patient_alerts.next_page_number }}">&raquo;</a></li>
+                    {% else %}
+                    <li class="disabled"><span>&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </ul>
+        {% endif %}
+
+
+        <br>
+
+        <div class="row">
+            {% for card in cards %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Pojawiło się nowe okienko!</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{card.specialty}}</h6>
+                        <p class="card-text">dr {{card.doctor}}</p>
+                        <p class="card-text">{{card.datatime}}</p>
+                        <p class="card-text">{{card.address}}</p>
+                        <form action="{% url 'appointments:remove_slot' card.visit_id%}"
+                              method="POST">
+                            {% csrf_token %}
+
+                            <button onclick="return confirm('Czy na pewno chcesz odrzucić okienko?');" class="btn btn-light"
+                                    type="submit">Odrzuć
+                            </button>
+                        </form>
+
+                        <form action="{% url 'appointments:accept_slot' card.visit_id%}"
+                              method="POST">
+                            {% csrf_token %}
+
+                            <button onclick="return confirm('Czy na pewno chcesz zarezerwować okienko?');" class="btn btn-dark btn-alerts"
+                                    type="submit">Rezerwuj
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+
+{% endblock %}
