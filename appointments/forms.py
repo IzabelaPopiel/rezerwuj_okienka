@@ -316,8 +316,8 @@ class DoctorForm(forms.ModelForm):
         }
 
     def clean_password_repeat(self):
-        password = self.cleaned_data['password']
-        password_repeat = self.cleaned_data['password_repeat']
+        password = self.cleaned_data.get('password')
+        password_repeat = self.cleaned_data.get('password_repeat')
         if (password != password_repeat) and (password is not None):
             raise ValidationError("Podane hasła muszą być takie same")
         return password_repeat
