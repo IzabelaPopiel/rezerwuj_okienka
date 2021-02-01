@@ -73,7 +73,7 @@ class AlertForm(forms.ModelForm):
         if commit:
             x = Alert.objects.filter(specialty=alert.specialty, city=alert.city, patient=alert.patient)
             if x.count():
-                alert = x
+                alert = None
             else:
                 alert.save()
 

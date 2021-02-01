@@ -396,8 +396,11 @@ def patient_alerts(request):
             patient = request.session.get('email')
             alert_form.cleaned_data['patient'] = patient
             result = alert_form.save()
-            if result:
+            if result is not None:
                 messages.success(request, "Pomyślnie ustawiono alert dla specjalizacji: %s oraz miasta: %s"
+                                 % (specialty, city))
+            else:
+                messages.warning(request, "Alert dla specjalizacji: %s oraz miasta: %s został już wcześniej ustawiony"
                                  % (specialty, city))
 
         else:
