@@ -20,6 +20,22 @@ from reservationsystem import email
 
 
 def register(request):
+    """
+    Registers patient.
+
+    If patient is already logged in, he will be redirected to his homepage.
+    If request method is POST and form is valid, it'll be saved and patient will be registered and redirected to homepage.
+    In other cases patient register form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering result of redirect_template(request) - patient's home page
+                    render: Result of redirecting to '/appointments/login/'
+                    render: Result of rendering 'register.html' with patient's register form in context
+
+    """
     if is_already_logged(request):
         return render(request, redirect_template(request))
     elif request.method == 'POST':
@@ -27,13 +43,30 @@ def register(request):
         if form.is_valid():
             form.cleaned_data['slots'] = {'slots': []}
             form.save()
-            return redirect('/appointments/home/')
+            return redirect('/appointments/login/')
     else:
         form = PatientForm()
     return render(request, 'register.html', {'form': form})
 
 
 def login(request):
+    """
+    Logins users.
+
+    If user is already logged in, he will be redirected to his homepage.
+    If request method is POST and form is valid, email and user type will be saved in session and user will be
+    redirected to homepage.
+    In other cases patient login form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering patient's or doctor's home page
+                    render: Result of redirecting to '/appointments/home/'
+                    render: Result of rendering 'login.html' with login form in context
+
+    """
     if is_already_logged(request):
         template_name, context = redirect_template(request)
         return render(request, template_name, context=context)
@@ -49,6 +82,18 @@ def login(request):
 
 
 def logout(request):
+    """
+    Logouts users.
+
+    If request method is GET, session will be cleaned and login form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering 'login.html' with login form in context
+
+    """
     if request.method == 'GET':
         request.session.flush()
     form = LoginForm()
@@ -56,6 +101,21 @@ def logout(request):
 
 
 def home(request):
+    """
+    Renders proper homepage.
+
+    If user is already logged in, checks to which template he should be recireted and then renders proper homepage.
+    If user is not logged in, renders login page.
+
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'login.html' with login form in context
+
+    """
     if is_already_logged(request):
         template_name, context = redirect_template(request)
         return render(request, template_name, context=context)
@@ -65,12 +125,37 @@ def home(request):
 
 
 def is_already_logged(request):
+    """
+    Checks if user is already logged in.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    True: if email and user type are saved in session
+                    False: if email or user type is not saved in session
+
+    """
     if request.session.get('email') and request.session.get('user_type'):
         return True
     return False
 
 
 def redirect_template(request):
+    """
+    Return propoer homepage temple name with context.
+    Checks user type saved in session. If user type is patient, all his visits are put in context and returned
+    together with patient_home.html template. If user type is doctor also all his visits are put in context
+    and returned togther with doctor_home.html template.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    template_name: 'patient_home.html' ora 'doctor_home.html' depending on user type
+                    context: dictionary with user's visit
+
+    """
     if request.session.get('user_type') == 'patient':
         patient_mail = request.session.get('email')
         visits = get_patient_visits(patient_mail)
@@ -323,6 +408,22 @@ def search_visit(request):
 
 @login_required(login_url='/admin/login/')
 def add_doctor(request):
+    """
+    Admin registers doctor.
+
+    If admin is not already logged in, he will be redirected to admin login page.
+    If request method is POST and form is valid, it will be saved and doctor wil be registered. Doctor adding form
+    will be rendered with success message.
+    In other cases only doctor doctor adding form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'add_doctor.html' with adding doctor form
+
+    """
     if request.method == 'POST':
         form = DoctorForm(request.POST)
         if form.is_valid():
@@ -462,6 +563,23 @@ def remove_alert(request, specialty, city):
 
 
 def remove_slot(request, visit_id):
+    """
+    Removes slot.
+
+    If patient is not interested in proposed slot and he do not want to see this slot card in his alert page, he can
+    remove it.
+    If request method is POST, all patient's slots are downloaded from database. Slot with given visit_id is removed
+    and patient;s slots are updated. Alert page is rerendered with proper message.
+
+            Parameters:
+                    request (WSGIRequest): Request
+                    visit_id: str
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'add_doctor.html' with adding doctor form
+
+        """
     patient_mail = request.session.get('email')
     patient = Patient.objects.filter(email=patient_mail)
 
