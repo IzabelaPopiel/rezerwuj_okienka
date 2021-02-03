@@ -201,6 +201,23 @@ def get_patient_visits(patient_mail):
 
 
 def add_visit(request):
+    """
+    A function that supports adding new visits on the doctor's page.
+
+    If request method is POST and the address is entered and the address form is valid and if the new address does
+    not exist in the database, it will be saved.
+    If request method is POST and the address is selected from the list or correctly entered and
+    the date and time of the visit are correct, the new visit will be created and added to the database. And the slots
+     will be sent to the patients.
+
+            Parameters:
+                request: Request
+
+            Returns:
+                render: Result of rendering 'add_visit.html' with visit's form and address's form and a list with
+                addresses (address names) to be displayed in context
+
+    """
     doctor_mail = request.session.get('email')
     options = []
     addresses = Address.objects.all().values().values_list()
@@ -255,6 +272,17 @@ def add_visit(request):
 
 
 def check_address_form(address_form: AddressForm):
+    """
+    Checks that the data from the address form is correctly entered.
+
+            Parameters:
+                    address_form (AddressForm): address form
+
+            Returns:
+                    result (bool): true if the form is correct, false if not
+                    message (str): description of the incorrectness
+
+    """
     result = True
     message = ""
     city = address_form.cleaned_data['city']
@@ -274,6 +302,18 @@ def check_address_form(address_form: AddressForm):
 
 
 def set_slots_for_patients(visit_pk, doctor_email, address):
+    """
+    Sets slots.
+
+    Adds slot information to the slots of patients who have an alert set for this visit's parameters.
+    And sends an email to those patients notifying them of the new slot.
+
+            Parameters:
+                visit_pk: visit primary key
+                doctor_email: e-mail of the doctor
+                address: visit address
+
+    """
     doctor = Doctor.objects.get(email=doctor_email)
     specialty = doctor.medical_Specialty
 
@@ -322,6 +362,15 @@ def remove_slots_help(visit_id):
 
 
 def send_email(to_addresses, subject, body):
+    """
+    Sends e-mails to patients.
+
+            Parameters:
+                to_addresses (list): e-mail addresses to which the message will be sent
+                subject (str): e-mail subject
+                body (str): e-mail text
+
+    """
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.ehlo()
     server.starttls()
@@ -372,6 +421,14 @@ def remove_visit(request, date_time):
 
 
 def remove_visit_send_email(visits_data_list):
+    """
+    Sends e-mail when visit is removed.
+
+            Parameters:
+                visits_data_list (list): data of a deleted visit; the list includes data such as: date, time, address,
+                e-mail of the patient, e-mail of the doctor
+
+    """
     date_time = visits_data_list[0][1]
     doctor_email = visits_data_list[0][2]
     address_name = visits_data_list[0][3]
@@ -391,6 +448,20 @@ def remove_visit_send_email(visits_data_list):
 
 
 def search_visit(request):
+    """
+    A function that supports searching for visits on the patient's page.
+
+    If request method is POST, visits will be filtered.
+    Otherwise, visits will not be filtered.
+
+            Parameters:
+                    request: Request
+
+            Returns:
+                    render: Result of rendering 'search_visit.html' with visit's search form and list of visits
+                    to be displayed in context
+
+    """
     if request.method == "POST":
         search_form = SearchVisitForm(request.POST)
         city = search_form.data['city']
@@ -652,6 +723,12 @@ def accept_slot(request, visit_id):
 
 
 def get_free_visits(city, specialty, date):
+    """
+
+
+    If parameters: city, specialty and date are None, the function returns all visits.
+
+    """
     visits = []
     visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
     matching_visit = visit_collection.find({'patient': None})
