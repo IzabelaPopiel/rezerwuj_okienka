@@ -507,6 +507,30 @@ def patient_alerts(request):
     except EmptyPage:
         contacts = paginator.page(paginator.num_pages)
 
+    cards_text = patient_slots_to_cards(patient_mail)
+
+    context = {'alert_page': 'active', 'alert_form': alert_form,
+               'medical_specialties_form': medical_specialties_form,
+               'patient_alerts': contacts, 'cards': cards_text, }
+
+    return render(request, 'patient_alerts.html', context=context)
+
+
+def patient_slots_to_cards(patient_mail):
+    """
+    Converts patients slots list into easy to display dictionaries with slot's additional information .
+
+    Takes all patient slots. For every slots finds visit with matching id. From visit takes date, doctor,
+    and address. From doctor takes first name, last name and speciality. From address takes street and city.
+    Final dictionary contains properly formatted speciality, doctor name, date, address and visit id.
+
+            Parameters:
+                    patient_mail (str): patient's mail
+
+            Returns:
+                    cards_text: list of dictionaries containing additional info about slots.
+
+    """
     patient_slots_str = getattr(Patient.objects.filter(email=patient_mail).first(), 'slots')
     try:
         patient_slots = parse_json(patient_slots_str)["slots"]
@@ -533,15 +557,10 @@ def patient_alerts(request):
                     {'specialty': specialty, 'doctor': doc_name, 'datatime': date_format,
                      'address': full_address, 'visit_id': visit_id})
 
-        context = {'alert_page': 'active', 'alert_form': alert_form,
-                   'medical_specialties_form': medical_specialties_form,
-                   'patient_alerts': contacts, 'cards': cards_text, }
     except KeyError:
-        context = {'alert_page': 'active', 'alert_form': alert_form,
-                   'medical_specialties_form': medical_specialties_form,
-                   'patient_alerts': contacts, 'cards': [], }
+        cards_text = []
 
-    return render(request, 'patient_alerts.html', context=context)
+    return cards_text
 
 
 def remove_alert(request, specialty, city):
