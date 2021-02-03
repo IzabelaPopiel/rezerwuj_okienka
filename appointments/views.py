@@ -282,12 +282,12 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
     alerts = Alert.objects.filter(specialty=specialty, city=city).values().values_list()
     patients_emails = []
 
-    for a in alerts:
-        p_email = a[3]
+    for alert in alerts:
+        patient_email = alert[3]
 
-        patients_emails.append(p_email)
+        patients_emails.append(patient_email)
 
-        patient = Patient.objects.filter(email=p_email)
+        patient = Patient.objects.filter(email=patient_email)
         slots_json = patient.values().values_list()[0][6]
         if 'slots' in slots_json:
             slots = slots_json['slots']
@@ -676,29 +676,47 @@ def get_free_visits(city, specialty, date):
             v_date = v['date'].date().strftime("%d/%m/%Y")
             visit_id = v["_id"]
 
-            visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
-                     'last_name_doctor': last_name_doctor,
-                     'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_code_city,
-                     'time': v_time, 'date': v_date, 'visit_id': visit_id}
-
-            flag = True
-
-            if date is not None and date != "":
-                date = date[0:10]
-                v_date = v['date'].date().strftime("%m/%d/%Y")
-                if v_date != date:
-                    flag = False
-            if city is not None and city != "":
-                if address_city != city:
-                    flag = False
-            if specialty is not None and specialty != "":
-                if specialty != medical_specialty:
-                    flag = False
-
-            if flag:
+            if is_visit_filter(city=city, specialty=specialty, date=date, visit=v, visit_city=address_city,
+                               visit_doctor_specialty=medical_specialty):
+                visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
+                         'last_name_doctor': last_name_doctor,
+                         'clinic_name': clinic_name, 'address_street': address_street,
+                         'address_city': address_code_city,
+                         'time': v_time, 'date': v_date, 'visit_id': visit_id}
                 visits.append(visit)
 
     return visits
+
+
+def is_visit_filter(city, specialty, date, visit, visit_city, visit_doctor_specialty):
+    """
+    Checks if the visit data complies with the filtering parameters.
+
+            Parameters:
+                city: the first of the filtering parameters
+                specialty: the second of the filtering parameters
+                date: the third of the filtering parameters
+                visit: visit
+                visit_city: visit city address
+                visit_doctor_specialty: doctor's specialty of the visit
+
+            Returns:
+                flag (bool): True if the visit meets the filter criteria, False if not
+
+    """
+    flag = True
+    if date is not None and date != "":
+        date = date[0:10]
+        visit_date = visit['date'].date().strftime("%m/%d/%Y")
+        if visit_date != date:
+            flag = False
+    if city is not None and city != "":
+        if visit_city != city:
+            flag = False
+    if specialty is not None and specialty != "":
+        if specialty != visit_doctor_specialty:
+            flag = False
+    return flag
 
 
 def parse_json(data):
