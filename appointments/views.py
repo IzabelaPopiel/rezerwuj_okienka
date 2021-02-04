@@ -20,6 +20,23 @@ from reservationsystem import email
 
 
 def register(request):
+    """
+    Registers patient.
+
+    If patient is already logged in, he will be redirected to his homepage.
+    If request method is POST and form is valid, it'll be saved and patient will be registered and redirected
+    to homepage.
+    In other cases patient register form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering result of redirect_template(request) - patient's home page
+                    render: Result of redirecting to '/appointments/login/'
+                    render: Result of rendering 'register.html' with patient's register form in context
+
+    """
     if is_already_logged(request):
         return render(request, redirect_template(request))
     elif request.method == 'POST':
@@ -27,13 +44,30 @@ def register(request):
         if form.is_valid():
             form.cleaned_data['slots'] = {'slots': []}
             form.save()
-            return redirect('/appointments/home/')
+            return redirect('/appointments/login/')
     else:
         form = PatientForm()
     return render(request, 'register.html', {'form': form})
 
 
 def login(request):
+    """
+    Logins users.
+
+    If user is already logged in, he will be redirected to his homepage.
+    If request method is POST and form is valid, email and user type will be saved in session and user will be
+    redirected to homepage.
+    In other cases patient login form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering patient's or doctor's home page
+                    render: Result of redirecting to '/appointments/home/'
+                    render: Result of rendering 'login.html' with login form in context
+
+    """
     if is_already_logged(request):
         template_name, context = redirect_template(request)
         return render(request, template_name, context=context)
@@ -49,6 +83,18 @@ def login(request):
 
 
 def logout(request):
+    """
+    Logouts users.
+
+    If request method is GET, session will be cleaned and login form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering 'login.html' with login form in context
+
+    """
     if request.method == 'GET':
         request.session.flush()
     form = LoginForm()
@@ -56,6 +102,21 @@ def logout(request):
 
 
 def home(request):
+    """
+    Renders proper homepage.
+
+    If user is already logged in, checks to which template he should be redirected and then renders proper homepage.
+    If user is not logged in, renders login page.
+
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'login.html' with login form in context
+
+    """
     if is_already_logged(request):
         template_name, context = redirect_template(request)
         return render(request, template_name, context=context)
@@ -65,12 +126,38 @@ def home(request):
 
 
 def is_already_logged(request):
+    """
+    Checks if user is already logged in.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    True: if email and user type are saved in session
+                    False: if email or user type is not saved in session
+
+    """
     if request.session.get('email') and request.session.get('user_type'):
         return True
     return False
 
 
 def redirect_template(request):
+    """
+    Return proper homepage temple name with context.
+
+    Checks user type saved in session. If user type is patient, all his visits are put in context and returned
+    together with patient_home.html template. If user type is doctor also all his visits are put in context
+    and returned together with doctor_home.html template.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    template_name: 'patient_home.html' ora 'doctor_home.html' depending on user type
+                    context: dictionary with user's visit
+
+    """
     if request.session.get('user_type') == 'patient':
         patient_mail = request.session.get('email')
         visits = get_patient_visits(patient_mail)
@@ -84,6 +171,20 @@ def redirect_template(request):
 
 
 def get_patient_visits(patient_mail):
+    """
+    Converts patients future visits list into easy to display dictionaries with visit's additional information.
+
+    Takes only future patient visits. From visit takes date, doctor, address and visit id. From doctor takes first name,
+    last name and speciality. From address takes street and city.
+    Final dictionary contains properly formatted speciality, doctor name, date, address and visit id.
+
+            Parameters:
+                    patient_mail (str): e-mail of the patient
+
+            Returns:
+                    visits: list of dictionaries containing information about future patient visits.
+
+    """
     visits = []
     visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
     matching_visit = visit_collection.find({'patient': patient_mail})
@@ -116,6 +217,23 @@ def get_patient_visits(patient_mail):
 
 
 def add_visit(request):
+    """
+    A function that supports adding new visits on the doctor's page.
+
+    If request method is POST and the address is entered and the address form is valid and if the new address does
+    not exist in the database, it will be saved.
+    If request method is POST and the address is selected from the list or correctly entered and
+    the date and time of the visit are correct, the new visit will be created and added to the database. And the slots
+    will be sent to the patients.
+
+            Parameters:
+                    request: Request
+
+            Returns:
+                    render: Result of rendering 'add_visit.html' with visit's form and address's form and a list with
+                    addresses (address names) to be displayed in context
+
+    """
     doctor_mail = request.session.get('email')
     options = []
     addresses = Address.objects.all().values().values_list()
@@ -170,6 +288,17 @@ def add_visit(request):
 
 
 def check_address_form(address_form: AddressForm):
+    """
+    Checks that the data from the address form is correctly entered.
+
+            Parameters:
+                    address_form (AddressForm): address form
+
+            Returns:
+                    result (bool): true if the form is correct, false if not
+                    message (str): description of the incorrectness
+
+    """
     result = True
     message = ""
     city = address_form.cleaned_data['city']
@@ -189,6 +318,18 @@ def check_address_form(address_form: AddressForm):
 
 
 def set_slots_for_patients(visit_pk, doctor_email, address):
+    """
+    Sets slots.
+
+    Adds slot information to the slots of patients who have an alert set for this visit's parameters.
+    And sends an email to these patients, notifying them about the new slot.
+
+            Parameters:
+                    visit_pk: visit primary key
+                    doctor_email: e-mail of the doctor
+                    address: visit address
+
+    """
     doctor = Doctor.objects.get(email=doctor_email)
     specialty = doctor.medical_Specialty
 
@@ -197,12 +338,12 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
     alerts = Alert.objects.filter(specialty=specialty, city=city).values().values_list()
     patients_emails = []
 
-    for a in alerts:
-        p_email = a[3]
+    for alert in alerts:
+        patient_email = alert[3]
 
-        patients_emails.append(p_email)
+        patients_emails.append(patient_email)
 
-        patient = Patient.objects.filter(email=p_email)
+        patient = Patient.objects.filter(email=patient_email)
         slots_json = patient.values().values_list()[0][6]
         if 'slots' in slots_json:
             slots = slots_json['slots']
@@ -221,6 +362,16 @@ def set_slots_for_patients(visit_pk, doctor_email, address):
 
 
 def remove_slots_help(visit_id):
+    """
+    Auxiliary method for removing slots.
+
+    Takes all patients. For each patient, takes his slots. If the slot is None, the method attempts to delete the slot
+    with id visit_id and update the slots in the database.
+
+            Parameters:
+                visit_id: str
+ :
+    """
     patient_collection = Patient.objects.all().values('email')
     for p in patient_collection:
 
@@ -237,6 +388,15 @@ def remove_slots_help(visit_id):
 
 
 def send_email(to_addresses, subject, body):
+    """
+    Sends e-mails to patients.
+
+            Parameters:
+                to_addresses (list): e-mail addresses to which the message will be sent
+                subject (str): e-mail subject
+                body (str): e-mail text
+
+    """
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.ehlo()
     server.starttls()
@@ -259,20 +419,37 @@ def send_email(to_addresses, subject, body):
 
 
 def remove_visit(request, date_time):
+    """
+    Removing visits on the doctor's page.
+
+    If request method is POST, a doctor's visit at a specific date and time is downloaded from the database.
+    If this visit is deleted from the database then the slots are deleted. If a patient was assigned to the visit, he will
+    receive an email.
+
+            Parameters:
+                request: Request
+                date_time (str): date and time of visit
+
+            Returns:
+                render: Result of rendering  doctor's home page
+                render: Result of redirecting to '/appointments/home/'
+
+
+    """
     doctor_mail = request.session.get('email')
     visit = Visit.objects.filter(doctor=doctor_mail, date=date_time)
+    date_time_obj = datetime.strptime(date_time, '%Y-%m-%d %H:%M')
 
     if request.method == 'POST':
         visits_data = list(visit.all().values().values_list())
-
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
-        matching_visit = visit_collection.find_one({'doctor': doctor_mail, 'date': visits_data[0][1]})
+        matching_visit = visit_collection.find_one({'doctor': doctor_mail, 'date': date_time_obj})
         visit_id = matching_visit["_id"]
 
         result = visit_collection.remove(matching_visit)
         if result:
             remove_slots_help(visit_id)
-            patient = visits_data[0][4]
+            patient = matching_visit["patient"]
 
             if patient is not None:
                 remove_visit_send_email(visits_data_list=visits_data)
@@ -287,6 +464,14 @@ def remove_visit(request, date_time):
 
 
 def remove_visit_send_email(visits_data_list):
+    """
+    Sends e-mail when visit is removed.
+
+            Parameters:
+                visits_data_list (list): data of a deleted visit; the list includes data such as: date, time, address,
+                e-mail of the patient, e-mail of the doctor
+
+    """
     date_time = visits_data_list[0][1]
     doctor_email = visits_data_list[0][2]
     address_name = visits_data_list[0][3]
@@ -306,6 +491,20 @@ def remove_visit_send_email(visits_data_list):
 
 
 def search_visit(request):
+    """
+    A function that supports searching for visits on the patient's page.
+
+    If request method is POST, visits will be filtered.
+    Otherwise, visits will not be filtered.
+
+            Parameters:
+                    request: Request
+
+            Returns:
+                    render: Result of rendering 'search_visit.html' with visit's search form and list of visits
+                    to be displayed in context
+
+    """
     if request.method == "POST":
         search_form = SearchVisitForm(request.POST)
         city = search_form.data['city']
@@ -323,6 +522,22 @@ def search_visit(request):
 
 @login_required(login_url='/admin/login/')
 def add_doctor(request):
+    """
+    Admin registers doctor.
+
+    If admin is not already logged in, he will be redirected to admin login page.
+    If request method is POST and form is valid, it will be saved and doctor wil be registered. Doctor adding form
+    will be rendered with success message.
+    In other cases only doctor doctor adding form will be rendered.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'add_doctor.html' with adding doctor form
+
+    """
     if request.method == 'POST':
         form = DoctorForm(request.POST)
         if form.is_valid():
@@ -336,6 +551,20 @@ def add_doctor(request):
 
 
 def get_visits_for_doctor(doctor_email):
+    """
+    Converts doctors future visits list into easy to display dictionaries with visit's additional information.
+
+    Takes only future doctor visits. From visit takes date, patient, address. If the patient is assigned to the visit,
+    from patient takes first name, last name. Otherwise, the characters "---" are assigned as the first and last names.
+    From address takes street and city.
+    Final dictionary contains properly formatted patient name, date, address.
+
+            Parameters:
+                    doctor_email(str): e-mail of the doctor
+
+            Returns:
+                    visits: list of dictionaries containing information about future doctor visits.
+    """
     doctor_visits = Visit.objects.filter(doctor=doctor_email)
     list_v = list(doctor_visits.all().values().values_list())
     visits = []
@@ -368,7 +597,67 @@ def get_visits_for_doctor(doctor_email):
     return visits
 
 
+def read_patient_alerts(patient_mail):
+    """
+    Takes all patient already set alerts from database.
+
+            Parameters:
+                    patient_mail (str): e-mail of the patient
+
+            Returns:
+                    alerts: list of dictionaries containing information about patient's alerts.
+    """
+    list_patient_alerts = Alert.objects.filter(patient=patient_mail)
+    list_alerts = list(list_patient_alerts.all().values().values_list())
+    alerts = []
+    i = 0
+    for a in list_alerts:
+        i += 1
+        alert = {'number': i, 'specialty': a[1], 'city': a[2]}
+        alerts.append(alert)
+    return alerts
+
+
+def divide_alerts_into_pages(request, alerts):
+    """
+    Divides alerts into pages (groups of three) in order to display them correctly in table.
+
+            Parameters:
+                    request: Request
+                    alerts (list): list of dictionaries containing information about patient's alerts.
+
+            Returns:
+                    active_alert_page: Page with alerts to be shown
+
+    """
+    page = request.GET.get('page', 1)   # 1 is default value
+    paginator = Paginator(alerts, 3)    # show 3 alerts per page
+
+    try:
+        active_alert_page = paginator.page(page)
+    except PageNotAnInteger:
+        # if page is not an integer, show first page
+        active_alert_page = paginator.page(1)
+    except EmptyPage:
+        # if page is out of range, show last page of results
+        active_alert_page = paginator.page(paginator.num_pages)
+
+    return active_alert_page
+
+
 def patient_alerts(request):
+    """
+    If request method is POST and the alert form is valid and if the new alert does not exist in the database, it will
+    be saved.
+
+            Parameters:
+                    request (WSGIRequest): Request
+
+            Returns:
+                    render: Result of rendering 'patient_alerts.html' with alert's form and medical specialties form
+                    and a list of dictionaries containing additional info about slots to be displayed in context
+
+    """
     medical_specialties_form = MedicalSpecialtyForm()
     alert_form = AlertForm()
     patient_mail = request.session.get('email')
@@ -387,25 +676,32 @@ def patient_alerts(request):
                 messages.warning(request, "Alert dla specjalizacji: %s oraz miasta: %s został już wcześniej ustawiony"
                                  % (specialty, city))
 
-    list_patient_alerts = Alert.objects.filter(patient=patient_mail)
-    list_alerts = list(list_patient_alerts.all().values().values_list())
-    alerts = []
-    i = 0
-    for a in list_alerts:
-        i += 1
-        alert = {'number': i, 'specialty': a[1], 'city': a[2]}
-        alerts.append(alert)
+    alerts = read_patient_alerts(patient_mail)
+    contacts = divide_alerts_into_pages(request, alerts)
+    cards_text = patient_slots_to_cards(patient_mail)
 
-    page = request.GET.get('page', 1)
-    paginator = Paginator(alerts, 3)
+    context = {'alert_page': 'active', 'alert_form': alert_form,
+               'medical_specialties_form': medical_specialties_form,
+               'patient_alerts': contacts, 'cards': cards_text, }
 
-    try:
-        contacts = paginator.page(page)
-    except PageNotAnInteger:
-        contacts = paginator.page(1)
-    except EmptyPage:
-        contacts = paginator.page(paginator.num_pages)
+    return render(request, 'patient_alerts.html', context=context)
 
+
+def patient_slots_to_cards(patient_mail):
+    """
+    Converts patients slots list into easy to display dictionaries with slot's additional information.
+
+    Takes all patient slots. For every slots finds visit with matching id. From visit takes date, doctor,
+    and address. From doctor takes first name, last name and speciality. From address takes street and city.
+    Final dictionary contains properly formatted speciality, doctor name, date, address and visit id.
+
+            Parameters:
+                    patient_mail (str): patient's mail
+
+            Returns:
+                    cards_text: list of dictionaries containing additional info about slots.
+
+    """
     patient_slots_str = getattr(Patient.objects.filter(email=patient_mail).first(), 'slots')
     try:
         patient_slots = parse_json(patient_slots_str)["slots"]
@@ -432,18 +728,29 @@ def patient_alerts(request):
                     {'specialty': specialty, 'doctor': doc_name, 'datatime': date_format,
                      'address': full_address, 'visit_id': visit_id})
 
-        context = {'alert_page': 'active', 'alert_form': alert_form,
-                   'medical_specialties_form': medical_specialties_form,
-                   'patient_alerts': contacts, 'cards': cards_text, }
     except KeyError:
-        context = {'alert_page': 'active', 'alert_form': alert_form,
-                   'medical_specialties_form': medical_specialties_form,
-                   'patient_alerts': contacts, 'cards': [], }
+        cards_text = []
 
-    return render(request, 'patient_alerts.html', context=context)
+    return cards_text
 
 
 def remove_alert(request, specialty, city):
+    """
+    Removing the alert.
+
+    If the patient does not want to be notified of free appointments from the alert, they can delete the alert.
+    If the request method is POST, the patient alert for the specialty and city will be removed.
+
+            Parameters:
+                request (WSGIRequest): Request
+                specialty (str): doctor's specialization
+                city (str): the city for which the alert was set
+
+            Returns:
+                render: Result of redirecting to '/appointments/home/alerts/'
+                render: Result of rendering  patient's alerts page
+
+    """
     patient_mail = request.session.get('email')
 
     visit = Alert.objects.filter(patient=patient_mail, specialty=specialty, city=city)
@@ -462,6 +769,23 @@ def remove_alert(request, specialty, city):
 
 
 def remove_slot(request, visit_id):
+    """
+    Removes slot.
+
+    If patient is not interested in proposed slot and he do not want to see this slot card in his alert page, he can
+    remove it.
+    If request method is POST, all patient's slots are downloaded from database. Slot with given visit_id is removed
+    and patient;s slots are updated. Alert page is rerendered with proper message.
+
+            Parameters:
+                    request (WSGIRequest): Request
+                    visit_id (str): id of visit
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'add_doctor.html' with adding doctor form
+
+        """
     patient_mail = request.session.get('email')
     patient = Patient.objects.filter(email=patient_mail)
 
@@ -482,6 +806,21 @@ def remove_slot(request, visit_id):
 
 
 def book_visit(request, visit_id):
+    """
+    Book an appointment.
+
+    If the visit with the number id visit_id is still free, it will be booked. Slot with given visit_id is removed.
+    Search_visit page is rerendered with proper message.
+
+            Parameters:
+                    request (WSGIRequest): Request
+                    visit_id (str): id of visit
+
+            Returns:
+                    render: Result of redirecting to '/appointments/home/search_visit'
+                    render: Result of rendering  patient's search_visit page
+
+    """
     patient_mail = request.session.get('email')
     if request.method == 'POST':
         visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
@@ -498,6 +837,22 @@ def book_visit(request, visit_id):
 
 
 def accept_slot(request, visit_id):
+    """
+    Accepts slot.
+
+    If request method is POST, visit with the number id visit_id is downloaded from database. If the visit is still
+    free, slot with given visit_id is removed and patients slots are updated. Alert page is rerendered
+    with proper message.
+
+            Parameters:
+                    request (WSGIRequest): Request
+                    visit_id (str): id of visit
+
+            Returns:
+                    render: Result of rendering proper homepage
+                    render: Result of rendering 'patient_alerts.html'
+
+    """
     patient_mail = request.session.get('email')
 
     if request.method == 'POST':
@@ -515,6 +870,20 @@ def accept_slot(request, visit_id):
 
 
 def get_free_visits(city, specialty, date):
+    """
+    Takes all visits without patient (free visits) from data base.
+
+    Visits are filtered by city, specialty and date. If these parameter are None, function returns all free visits.
+
+            Parameters:
+                    specialty (str): doctor's specialization
+                    city (str): visit location
+                    date (datetime): date of the visit
+
+            Returns:
+                    visits: list of dictionaries containing information about visits.
+
+    """
     visits = []
     visit_collection = MongoClient(config.host)["appointmentSystem"]["appointments_visit"]
     matching_visit = visit_collection.find({'patient': None})
@@ -539,29 +908,47 @@ def get_free_visits(city, specialty, date):
             v_date = v['date'].date().strftime("%d/%m/%Y")
             visit_id = v["_id"]
 
-            visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
-                     'last_name_doctor': last_name_doctor,
-                     'clinic_name': clinic_name, 'address_street': address_street, 'address_city': address_code_city,
-                     'time': v_time, 'date': v_date, 'visit_id': visit_id}
-
-            flag = True
-
-            if date is not None and date != "":
-                date = date[0:10]
-                v_date = v['date'].date().strftime("%m/%d/%Y")
-                if v_date != date:
-                    flag = False
-            if city is not None and city != "":
-                if address_city != city:
-                    flag = False
-            if specialty is not None and specialty != "":
-                if specialty != medical_specialty:
-                    flag = False
-
-            if flag:
+            if is_visit_filter(city=city, specialty=specialty, date=date, visit=v, visit_city=address_city,
+                               visit_doctor_specialty=medical_specialty):
+                visit = {'medical_specialty': medical_specialty, 'first_name_doctor': first_name_doctor,
+                         'last_name_doctor': last_name_doctor,
+                         'clinic_name': clinic_name, 'address_street': address_street,
+                         'address_city': address_code_city,
+                         'time': v_time, 'date': v_date, 'visit_id': visit_id}
                 visits.append(visit)
 
     return visits
+
+
+def is_visit_filter(city, specialty, date, visit, visit_city, visit_doctor_specialty):
+    """
+    Checks if the visit data matches filtering parameters.
+
+            Parameters:
+                    city: the first of the filtering parameters
+                    specialty: the second of the filtering parameters
+                    date: the third of the filtering parameters
+                    visit: visit object
+                    visit_city: visit city address
+                    visit_doctor_specialty: doctor's specialty of the visit
+
+            Returns:
+                    flag (bool): True if the visit meets the filter criteria, False if not
+
+    """
+    flag = True
+    if date is not None and date != "":
+        date = date[0:10]
+        visit_date = visit['date'].date().strftime("%m/%d/%Y")
+        if visit_date != date:
+            flag = False
+    if city is not None and city != "":
+        if visit_city != city:
+            flag = False
+    if specialty is not None and specialty != "":
+        if specialty != visit_doctor_specialty:
+            flag = False
+    return flag
 
 
 def parse_json(data):
