@@ -677,12 +677,12 @@ def patient_alerts(request):
                                  % (specialty, city))
 
     alerts = read_patient_alerts(patient_mail)
-    contacts = divide_alerts_into_pages(request, alerts)
+    active_alert_page = divide_alerts_into_pages(request, alerts)
     cards_text = patient_slots_to_cards(patient_mail)
 
     context = {'alert_page': 'active', 'alert_form': alert_form,
                'medical_specialties_form': medical_specialties_form,
-               'patient_alerts': contacts, 'cards': cards_text, }
+               'patient_alerts': active_alert_page, 'cards': cards_text, }
 
     return render(request, 'patient_alerts.html', context=context)
 
